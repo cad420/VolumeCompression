@@ -4,19 +4,25 @@
 #include<VoxelCompression/voxel_compress/VoxelCompress.h>
 #include<iencoder.h>
 #include<memory>
-#include<vector>
+
 /**
- * 1.each read a slice with w x h, total read depth(slice_num) times.(in this way, read is fast)
+ * @note most 3 instances of encoders can create!
+ * 1.just receive a complete block data
+ * 2.return compressed data
+ * @brief first pass encoding options then giving a src ptr with raw data and packets to store results
  */
 class VoxelCompressImpl{
 public:
+    /**
+     * @brief just need initialize once, all blocks share the same options
+     */
     explicit VoxelCompressImpl(const VoxelCompressOptions& opts);
-    bool compress();
+    bool compress(void* src_ptr,std::vector<std::vector<uint8_t>>& packets);
 private:
     /**
-     * number of encoders is (w+block_length-1)/block_length * (h+block_length-1)/block_length
+     * @brief two implication: OpenGL and CUDA
      */
-    std::vector<std::unique_ptr<IEncoder>> encoders;
+    std::unique_ptr<IEncoder> encoder;
     VoxelCompressOptions compress_opts;
 };
 
@@ -24,6 +30,6 @@ VoxelCompress::VoxelCompress(const VoxelCompressOptions& opts) {
     impl=std::make_unique<VoxelCompressImpl>(opts);
 }
 
-bool VoxelCompress::compress() {
-    return impl->compress();
+bool VoxelCompress::compress(void* src_ptr,std::vector<std::vector<uint8_t>>& packets) {
+    return impl->compress(src_ptr,packets);
 }

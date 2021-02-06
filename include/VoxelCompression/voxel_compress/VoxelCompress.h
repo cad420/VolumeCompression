@@ -7,20 +7,16 @@
 #include<memory>
 #include<cstdint>
 #include<string>
+#include<vector>
 struct VoxelCompressOptions{
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint32_t block_length;
-    uint32_t padding;
-    std::string in_file_path;
-    std::string out_file_path;
+    uint32_t width;
+    uint32_t height;
 };
 class VoxelCompressImpl;
 class VoxelCompress{
 public:
     explicit VoxelCompress(const VoxelCompressOptions& opts);
-    bool compress();
+    bool compress(void* src_ptr,std::vector<std::vector<uint8_t>>& packets);
 private:
     std::unique_ptr<VoxelCompressImpl> impl;
 };
