@@ -384,8 +384,6 @@ void NvEncoder::EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_P
 
     if (nvStatus == NV_ENC_SUCCESS || nvStatus == NV_ENC_ERR_NEED_MORE_INPUT)
     {
-        if(nvStatus==NV_ENC_ERR_NEED_MORE_INPUT)
-            std::cout<<"NV_ENC_ERR_NEED_MORE_INPUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
         m_iToSend++;
         GetEncodedPacket(m_vBitstreamOutputBuffer, vPacket, true);
     }

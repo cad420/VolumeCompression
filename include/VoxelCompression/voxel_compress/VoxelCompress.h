@@ -8,15 +8,21 @@
 #include<cstdint>
 #include<string>
 #include<vector>
+#include<nvEncodeAPI.h>
+#include<VoxelCompression/utils/NvEncoderCLIOptions.h>
 struct VoxelCompressOptions{
-    uint32_t width;
-    uint32_t height;
+    NV_ENC_BUFFER_FORMAT input_buffer_format=NV_ENC_BUFFER_FORMAT_NV12;
+    uint32_t width=0;
+    uint32_t height=0;
+    NvEncoderInitParam encode_init_params;
 };
 class VoxelCompressImpl;
 class VoxelCompress{
 public:
     explicit VoxelCompress(const VoxelCompressOptions& opts);
-    bool compress(void* src_ptr,std::vector<std::vector<uint8_t>>& packets);
+    ~VoxelCompress();
+    //allocated src buffer
+    bool compress(uint8_t* src_ptr,int64_t len,std::vector<std::vector<uint8_t>>& packets);
 private:
     std::unique_ptr<VoxelCompressImpl> impl;
 };

@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.17)
-project(VoxelCompression CXX CUDA)
+project(VoxelCompression C CXX CUDA)
 
 
 find_package(CUDA REQUIRED)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 14)
 
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 
