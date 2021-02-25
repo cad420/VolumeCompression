@@ -52,7 +52,7 @@ VoxelCompressImpl::VoxelCompressImpl(const VoxelCompressOptions &opts)
 }
 
 bool VoxelCompressImpl::compress(uint8_t *src_ptr,int64_t len,std::vector<std::vector<uint8_t>> &packets) {
-    if(src_ptr==nullptr)
+    if(src_ptr==nullptr || len<=0)
         return false;
     int64_t frame_size=encoder->GetFrameSize();//base on pixel format
     int frame_num=0;

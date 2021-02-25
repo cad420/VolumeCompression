@@ -6,7 +6,7 @@
 #include<VoxelCompression/voxel_uncompress/VoxelUncompress.h>
 #include<VoxelCompression/utils/NvCodecUtils.h>
 
-simplelogger::Logger* logger;
+//simplelogger::Logger* logger;
 /**
  *
  */
@@ -23,6 +23,8 @@ private:
 
     int width,height;
     NV_ENC_BUFFER_FORMAT output_format;
+
+    std::unique_ptr<NvDecoder> decoder;
 };
 
 VoxelUncompressImpl::VoxelUncompressImpl(const VoxelUncompressOptions &opts)
@@ -34,7 +36,7 @@ VoxelUncompressImpl::VoxelUncompressImpl(const VoxelUncompressOptions &opts)
         this->cu_ctx=opts.cu_ctx;
     }
 
-    NvDecoder decoder(cu_ctx,opts.use_device_frame_buffer,opts.codec_method);
+    decoder=std::make_unique<NvDecoder>(cu_ctx,opts.use_device_frame_buffer,opts.codec_method);
     width=opts.width;
     height=opts.height;
     output_format=opts.output_buffer_format;
@@ -62,8 +64,33 @@ bool VoxelUncompressImpl::initDecoder()
     return true;
 }
 
-bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector<std::vector<uint8_t>> &packets) {
-    return false;
+bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector<std::vector<uint8_t>> &packets)
+{
+    if(dest_ptr==nullptr || len<=0)
+        return false;
+
+
+    int total_decode_frame_num=0;
+    int64_t offset=0;
+    for(size_t i=0;i<packets.size()+1;i++){
+
+        uint8_t* packet=i<packets.size()?packets[i].data():nullptr;
+        size_t len=i<packets.size()?packets[i].size():0;
+        int frame_decode_num=decoder->Decode(packet,len);
+        total_decode_frame_num+=frame_decode_num;
+        std::cout<<"frame decode num: "<<frame_decode_num<<"\ttotal decode frame num: "<<total_decode_frame_num<<std::endl;
+        for(size_t j=0;j<frame_decode_num;j++){
+            auto frame_ptr=decoder->GetFrame();//device ptr
+            auto decode_frame_bytes=decoder->GetFrameSize();
+            auto res=cuMemcpy((CUdeviceptr)(dest_ptr+offset),(CUdeviceptr)frame_ptr,decode_frame_bytes);
+            offset+=decode_frame_bytes;
+            if(res!=CUDA_SUCCESS){
+                throw std::runtime_error("cuMemcpy error");
+            }
+        }
+    }
+    std::cout<<"total_decode_frame_num: "<<total_decode_frame_num<<std::endl;
+    return true;
 }
 
 
