@@ -14,15 +14,15 @@ set(NVCODEC_DIR ${PROJECT_THIRD_PARTY_DIR}/nvcodec)
 set(NVCODEC_INCLUDE_DIR ${NVCODEC_DIR}/include)
 set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
-set(GLM_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/glm)
+#set(GLM_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/glm)
 
 set(VolumeReader_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/VolumeReader/include)
 
 include_directories(include)
 add_subdirectory(${SRC_DIR})
-add_subdirectory(test)
+#add_subdirectory(test)
 
-add_subdirectory(${PROJECT_THIRD_PARTY_DIR}/glfw)
+#add_subdirectory(${PROJECT_THIRD_PARTY_DIR}/glfw)
 
 add_subdirectory(tools)
 
