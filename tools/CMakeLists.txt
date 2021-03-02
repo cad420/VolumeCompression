@@ -1,0 +1,8 @@
+
+add_executable(BlockVolumeCompress BlockVolumeCmp.cpp)
+target_include_directories(BlockVolumeCompress PUBLIC ${VolumeReader_INCLUDE_DIR})
+target_link_libraries(BlockVolumeCompress PRIVATE voxel_compress)
+
+add_executable(BlockVolumeUnCompress BlockVolumeUncmp.cpp)
+target_include_directories(BlockVolumeUnCompress PUBLIC ${VolumeReader_INCLUDE_DIR})
+target_link_libraries(BlockVolumeUnCompress PRIVATE voxel_uncompress)

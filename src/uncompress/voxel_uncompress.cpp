@@ -6,7 +6,8 @@
 #include<VoxelCompression/voxel_uncompress/VoxelUncompress.h>
 #include<VoxelCompression/utils/NvCodecUtils.h>
 
-//simplelogger::Logger* logger;
+simplelogger::Logger* logger;
+
 /**
  *
  */
@@ -25,6 +26,7 @@ private:
     NV_ENC_BUFFER_FORMAT output_format;
 
     std::unique_ptr<NvDecoder> decoder;
+    bool use_device_ptr;
 };
 
 VoxelUncompressImpl::VoxelUncompressImpl(const VoxelUncompressOptions &opts)
@@ -37,9 +39,11 @@ VoxelUncompressImpl::VoxelUncompressImpl(const VoxelUncompressOptions &opts)
     }
 
     decoder=std::make_unique<NvDecoder>(cu_ctx,opts.use_device_frame_buffer,opts.codec_method);
+    std::cout<<"create decoder"<<std::endl;
     width=opts.width;
     height=opts.height;
     output_format=opts.output_buffer_format;
+    use_device_ptr=opts.use_device_frame_buffer;
 }
 
 bool VoxelUncompressImpl::initCUDA()
@@ -68,7 +72,7 @@ bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector
 {
     if(dest_ptr==nullptr || len<=0)
         return false;
-
+    cuCtxSetCurrent(cu_ctx);
 
     int total_decode_frame_num=0;
     int64_t offset=0;
@@ -78,17 +82,20 @@ bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector
         size_t len=i<packets.size()?packets[i].size():0;
         int frame_decode_num=decoder->Decode(packet,len);
         total_decode_frame_num+=frame_decode_num;
-        std::cout<<"frame decode num: "<<frame_decode_num<<"\ttotal decode frame num: "<<total_decode_frame_num<<std::endl;
+//        std::cout<<"frame decode num: "<<frame_decode_num<<"\ttotal decode frame num: "<<total_decode_frame_num<<std::endl;
         for(size_t j=0;j<frame_decode_num;j++){
             auto frame_ptr=decoder->GetFrame();//device ptr
             auto decode_frame_bytes=decoder->GetFrameSize();
-            auto res=cuMemcpy((CUdeviceptr)(dest_ptr+offset),(CUdeviceptr)frame_ptr,decode_frame_bytes);
-            offset+=decode_frame_bytes;
-            if(res!=CUDA_SUCCESS){
-                throw std::runtime_error("cuMemcpy error");
-            }
+
+                auto res=cuMemcpy((CUdeviceptr)(dest_ptr+offset),(CUdeviceptr)frame_ptr,decode_frame_bytes);
+                offset+=decode_frame_bytes;
+                if(res!=CUDA_SUCCESS){
+                    throw std::runtime_error("cuMemcpy error");
+                }
+
         }
     }
+
     std::cout<<"total_decode_frame_num: "<<total_decode_frame_num<<std::endl;
     return true;
 }

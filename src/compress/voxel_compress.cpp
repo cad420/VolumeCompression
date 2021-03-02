@@ -46,19 +46,20 @@ VoxelCompressImpl::VoxelCompressImpl(const VoxelCompressOptions &opts)
 :compress_opts(opts)
 {
     initCUDA();
-    encoder=std::make_unique<NvEncoderCuda>(cu_ctx,compress_opts.width,compress_opts.height,compress_opts.input_buffer_format);
     initEncoder();
-
 }
 
 bool VoxelCompressImpl::compress(uint8_t *src_ptr,int64_t len,std::vector<std::vector<uint8_t>> &packets) {
     if(src_ptr==nullptr || len<=0)
         return false;
+    initEncoder();
+
     int64_t frame_size=encoder->GetFrameSize();//base on pixel format
     int frame_num=0;
     int64_t cur_frame_offset=0;
     int64_t compressed_size=0;
     int encode_turn=0;
+
     while(true){
         std::vector<std::vector<uint8_t>> tmp_packets;
         if(cur_frame_offset+frame_size<=len){
@@ -76,6 +77,7 @@ bool VoxelCompressImpl::compress(uint8_t *src_ptr,int64_t len,std::vector<std::v
         }
         else{
             encoder->EndEncode(tmp_packets);
+            std::cout<<"end encode"<<std::endl;
         }
         frame_num+=tmp_packets.size();
 //        std::cout<<"encode turn: "<<encode_turn++<<std::endl;
@@ -92,6 +94,7 @@ bool VoxelCompressImpl::compress(uint8_t *src_ptr,int64_t len,std::vector<std::v
     }
     std::cout<<"frame num is: "<<frame_num<<std::endl;
     std::cout<<"compressed size is: "<<compressed_size<<std::endl;
+    encoder.reset();
     return true;
 }
 
@@ -105,10 +108,13 @@ bool VoxelCompressImpl::initCUDA() {
     cu_ctx=nullptr;
     checkCUDAErrors(cuCtxCreate(&cu_ctx,0,cu_device));
 
+
     return true;
 }
 
 bool VoxelCompressImpl::initEncoder() {
+    encoder=std::make_unique<NvEncoderCuda>(cu_ctx,compress_opts.width,compress_opts.height,compress_opts.input_buffer_format);
+
     NV_ENC_INITIALIZE_PARAMS initializeParams = { NV_ENC_INITIALIZE_PARAMS_VER };
     NV_ENC_CONFIG encodeConfig = { NV_ENC_CONFIG_VER };
 

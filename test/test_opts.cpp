@@ -32,8 +32,12 @@ int main(int argc,char** argv)
     std::vector<std::vector<uint8_t>> packets;
     v_cmp.compress(data,len,packets);
     std::cout<<"Packet number is: "<<packets.size()<<std::endl;
-    for(int i=0;i<packets.size();i++)
+    uint64_t packets_size=0;
+    for(int i=0;i<packets.size();i++){
         std::cout<<"packet "<<i<<" size: "<<packets[i].size()<<std::endl;
+        packets_size+=packets[i].size();
+    }
+    std::cout<<"Packets size is: "<<packets_size<<std::endl;
     return 0;
 }
 
