@@ -8,6 +8,8 @@
 #include<vector>
 #include<fstream>
 #include<array>
+#include<condition_variable>
+#include<mutex>
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
 #define VOXEL_COMPRESS_VERSION 1
 namespace sv{
@@ -67,11 +69,16 @@ namespace sv{
                 std::cout<<"File open failed!"<<std::endl;
             }
         }
-
+        Reader(std::fstream&& in):in(std::forward<std::fstream>(in)){}
+        void read_header(){
+            read_header(this->header);
+        }
         void read_header(sv::Header& header){
             in.seekg(std::ios::beg);
             in.read(reinterpret_cast<char*>(&header),sizeof(header));
             std::cout<<header;
+            if(header.identifier!=VOXEL_COMPRESS_FILE_IDENTIFIER)\
+                throw std::runtime_error("file format error!");
             index_beg=sizeof(header);
             block_num=header.block_dim_x*header.block_dim_y*header.block_dim_z;
             data_beg=index_beg+block_num*sizeof(sv::Index);
@@ -82,37 +89,57 @@ namespace sv{
                 indexes.resize(block_num);
             }
             in.seekg(std::ios::beg+index_beg);
+            uint64_t max_size=0;
             for(size_t i=0;i<block_num;i++){
                 in.read(reinterpret_cast<char*>(&indexes[i]),sizeof(sv::Index));
-                std::cout<<indexes[i];
+//                std::cout<<indexes[i];
+                if(indexes[i].size>max_size)
+                    max_size=indexes[i].size;
             }
+//            std::cout<<"max size: "<<max_size<<std::endl;
         }
         void read_packet(const std::array<uint32_t,3>& index,std::vector<std::vector<uint8_t>>& packet){
-            for(auto& it:indexes){
-                if(it.index_x==index[0] && it.index_y==index[1] && it.index_z==index[2]){
-                    std::cout<<"find!!!"<<std::endl;
-                    in.seekg(std::ios::beg+data_beg+it.offset);
-                    uint64_t offset=0,frame_size=0;
-                    while(offset<it.size){
-                        in.read(reinterpret_cast<char*>(&frame_size),sizeof(uint64_t));
-                        std::cout<<"frame_size: "<<frame_size<<std::endl;
-                        std::vector<uint8_t> tmp;
-                        tmp.resize(frame_size);
-                        in.read(reinterpret_cast<char*>(tmp.data()),frame_size);
-                        packet.push_back(tmp);
-                        offset+=sizeof(uint64_t)+frame_size;
+            {
+                std::unique_lock<std::mutex> lk(mtx);
+                cv.wait(lk,[](){return true;});
+                std::cout<<"start read"<<std::endl;
+                for(auto& it:indexes){
+                    if(it.index_x==index[0] && it.index_y==index[1] && it.index_z==index[2]){
+//                    std::cout<<"find!!!"<<std::endl;
+//                    std::cout<<it<<std::endl;
+                        in.seekg(std::ios::beg+data_beg+it.offset);
+                        uint64_t offset=0,frame_size=0;
+                        while(offset<it.size){
+//                        std::cout<<"offset: "<<offset<<"\tsize: "<<it.size<<std::endl;
+                            in.read(reinterpret_cast<char*>(&frame_size),sizeof(uint64_t));
+//                        std::cout<<"frame_size: "<<frame_size<<std::endl;
+                            std::vector<uint8_t> tmp;
+                            tmp.resize(frame_size);
+                            in.read(reinterpret_cast<char*>(tmp.data()),frame_size);
+                            packet.push_back(tmp);
+                            offset+=sizeof(uint64_t)+frame_size;
+                        }
+                        std::cout<<"finish read packet"<<std::endl;
+                        break;
                     }
-                    return;
                 }
             }
+            cv.notify_one();
+        }
+        sv::Header get_header() const{
+            return this->header;
         }
     private:
+        sv::Header header;
         std::vector<sv::Index> indexes;
         uint32_t block_num;
         uint64_t index_beg;
         uint64_t data_beg;
         std::fstream in;
+        std::mutex mtx;
+        std::condition_variable cv;
     };
+
     class Writer{
     public:
         Writer(const char* file_name){

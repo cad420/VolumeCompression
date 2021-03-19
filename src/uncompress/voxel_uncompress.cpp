@@ -77,9 +77,10 @@ bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector
     int total_decode_frame_num=0;
     int64_t offset=0;
     for(size_t i=0;i<packets.size()+1;i++){
-
         uint8_t* packet=i<packets.size()?packets[i].data():nullptr;
         size_t len=i<packets.size()?packets[i].size():0;
+//        std::cout<<"len: "<<len<<std::endl;
+//        std::cout<<"i: "<<i<<"\tpackets.size: "<<packets.size()<<std::endl;
         int frame_decode_num=decoder->Decode(packet,len);
         total_decode_frame_num+=frame_decode_num;
 //        std::cout<<"frame decode num: "<<frame_decode_num<<"\ttotal decode frame num: "<<total_decode_frame_num<<std::endl;
@@ -96,7 +97,7 @@ bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector
         }
     }
 
-    std::cout<<"total_decode_frame_num: "<<total_decode_frame_num<<std::endl;
+//    std::cout<<"total_decode_frame_num: "<<total_decode_frame_num<<std::endl;
     return true;
 }
 
