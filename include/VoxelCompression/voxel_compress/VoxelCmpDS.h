@@ -169,6 +169,9 @@ namespace sv{
         }
 
         void write_packet(const std::array<uint32_t,3>& index,const std::vector<std::vector<uint8_t>>& packet){
+            std::unique_lock<std::mutex> lk(mtx);
+            cv.wait(lk,[](){return true;});
+
             uint64_t packet_size=0;
             out.seekp(std::ios::beg+data_beg+data_offset);
             for(size_t i=0;i<packet.size();i++){
@@ -183,6 +186,8 @@ namespace sv{
             out.write(reinterpret_cast<const char*>(&idx),sizeof(idx));
             index_offset+=sizeof(idx);
             data_offset+=packet_size;
+
+            cv.notify_one();
         }
 
     private:
@@ -192,6 +197,9 @@ namespace sv{
         uint64_t data_beg;
         uint64_t index_offset;
         uint64_t data_offset;
+
+        std::mutex mtx;
+        std::condition_variable cv;
     };
 }
 
