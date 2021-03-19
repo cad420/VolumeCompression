@@ -15,8 +15,7 @@ target_include_directories(voxel_compress PUBLIC
         ${NVCODEC_INCLUDE_DIR})
 
 set(NVENCODE_LIBS ${NVCODEC_LIB_DIR}/x64/nvencodeapi.lib)
+
 target_link_libraries(voxel_compress ${NVENCODE_LIBS})
-
-
 
 add_subdirectory(nvenc)

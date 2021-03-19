@@ -10,6 +10,7 @@
 #include<array>
 #include<condition_variable>
 #include<mutex>
+
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
 #define VOXEL_COMPRESS_VERSION 1
 namespace sv{
@@ -29,15 +30,15 @@ namespace sv{
         uint64_t codec_method;
         friend std::ostream& operator<<(std::ostream& os,const Header& header){
             os<<"[Header Info]"
-            <<"\n[identifier]: "<<header.identifier
-            <<"\n[version]: "<<header.version
-            <<"\n[raw_x,raw_y,raw_z]: "<<header.raw_x<<" "<<header.raw_y<<" "<<header.raw_z
-            <<"\n[block dim]: "<<header.block_dim_x<<" "<<header.block_dim_y<<" "<<header.block_dim_z
-            <<"\n[log_block_length]: "<<header.log_block_length
-            <<"\n[padding]: "<<header.padding
-            <<"\n[frame_width]: "<<header.frame_width
-            <<"\n[frame_height]: "<<header.frame_height
-            <<"\n[codec_method]: "<<header.codec_method<<std::endl;
+              <<"\n[identifier]: "<<header.identifier
+              <<"\n[version]: "<<header.version
+              <<"\n[raw_x,raw_y,raw_z]: "<<header.raw_x<<" "<<header.raw_y<<" "<<header.raw_z
+              <<"\n[block dim]: "<<header.block_dim_x<<" "<<header.block_dim_y<<" "<<header.block_dim_z
+              <<"\n[log_block_length]: "<<header.log_block_length
+              <<"\n[padding]: "<<header.padding
+              <<"\n[frame_width]: "<<header.frame_width
+              <<"\n[frame_height]: "<<header.frame_height
+              <<"\n[codec_method]: "<<header.codec_method<<std::endl;
             return os;
         }
     };
@@ -50,10 +51,10 @@ namespace sv{
         uint64_t size;
         friend std::ostream& operator<<(std::ostream& os,const Index& index){
             os<<"[Index Info]"
-            <<"\n[index_x,index_y,index_z]: "<<index.index_x<<" "<<index.index_y<<" "<<index.index_z
-            <<"\n[reserve]: "<<index.reserve
-            <<"\n[offset]: "<<index.offset
-            <<"\n[size]: "<<index.size<<std::endl;
+              <<"\n[index_x,index_y,index_z]: "<<index.index_x<<" "<<index.index_y<<" "<<index.index_z
+              <<"\n[reserve]: "<<index.reserve
+              <<"\n[offset]: "<<index.offset
+              <<"\n[size]: "<<index.size<<std::endl;
             return os;
         }
     };
@@ -89,12 +90,12 @@ namespace sv{
                 indexes.resize(block_num);
             }
             in.seekg(std::ios::beg+index_beg);
-            uint64_t max_size=0;
+//            uint64_t max_size=0;
             for(size_t i=0;i<block_num;i++){
                 in.read(reinterpret_cast<char*>(&indexes[i]),sizeof(sv::Index));
 //                std::cout<<indexes[i];
-                if(indexes[i].size>max_size)
-                    max_size=indexes[i].size;
+//                if(indexes[i].size>max_size)
+//                    max_size=indexes[i].size;
             }
 //            std::cout<<"max size: "<<max_size<<std::endl;
         }
@@ -102,7 +103,7 @@ namespace sv{
             {
                 std::unique_lock<std::mutex> lk(mtx);
                 cv.wait(lk,[](){return true;});
-                std::cout<<"start read"<<std::endl;
+//                std::cout<<"start read"<<std::endl;
                 for(auto& it:indexes){
                     if(it.index_x==index[0] && it.index_y==index[1] && it.index_z==index[2]){
 //                    std::cout<<"find!!!"<<std::endl;
@@ -119,13 +120,14 @@ namespace sv{
                             packet.push_back(tmp);
                             offset+=sizeof(uint64_t)+frame_size;
                         }
-                        std::cout<<"finish read packet"<<std::endl;
+//                        std::cout<<"finish read packet"<<std::endl;
                         break;
                     }
                 }
             }
             cv.notify_one();
         }
+
         sv::Header get_header() const{
             return this->header;
         }
@@ -136,8 +138,10 @@ namespace sv{
         uint64_t index_beg;
         uint64_t data_beg;
         std::fstream in;
+
         std::mutex mtx;
         std::condition_variable cv;
+
     };
 
     class Writer{

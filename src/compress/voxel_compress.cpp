@@ -82,8 +82,8 @@ bool VoxelCompressImpl::compress(uint8_t *src_ptr,int64_t len,std::vector<std::v
         frame_num+=tmp_packets.size();
 //        std::cout<<"encode turn: "<<encode_turn++<<std::endl;
 //        std::cout<<"tmp_packets.size(): "<<tmp_packets.size()<<std::endl;
-        LOG(INFO)<<"encode turn: "<<encode_turn++<<std::endl;
-        LOG(INFO)<<"tmp_packets.size(): "<<tmp_packets.size()<<std::endl;
+//        LOG(INFO)<<"encode turn: "<<encode_turn++<<std::endl;
+//        LOG(INFO)<<"tmp_packets.size(): "<<tmp_packets.size()<<std::endl;
         cur_frame_offset+=frame_size;
         for(int i=0;i<tmp_packets.size();i++){
             compressed_size+=tmp_packets[i].size();
