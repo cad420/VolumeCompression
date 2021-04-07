@@ -18,10 +18,9 @@
 #include <iterator>
 #include <cstring>
 #include <functional>
-#include "Logger.h"
 #include <nvEncodeAPI.h>
+#include <iostream>
 
-extern simplelogger::Logger *logger;
 
 #ifndef _WIN32
 inline bool operator==(const GUID &guid1, const GUID &guid2) {
@@ -296,8 +295,8 @@ public:
         }
 
         funcInit(pParams);
-        LOG(INFO) << NvEncoderInitParam().MainParamToString(pParams);
-        LOG(TRACE) << NvEncoderInitParam().FullParamToString(pParams);
+        std::cout<< NvEncoderInitParam().MainParamToString(pParams)<<std::endl;
+        std::cout << NvEncoderInitParam().FullParamToString(pParams)<<std::endl;
     }
 
 private:
@@ -310,7 +309,7 @@ private:
         std::vector<std::string> vstrValueName = split(strValueNames, ' ');
         auto it = std::find(vstrValueName.begin(), vstrValueName.end(), strValue);
         if (it == vstrValueName.end()) {
-            LOG(ERROR) << strName << " options: " << strValueNames;
+            std::cout<< strName << " options: " << strValueNames<<std::endl;
             return false;
         }
         *pValue = vValue[it - vstrValueName.begin()];
@@ -320,7 +319,7 @@ private:
     std::string ConvertValueToString(const std::vector<T> &vValue, const std::string &strValueNames, T value) {
         auto it = std::find(vValue.begin(), vValue.end(), value);
         if (it == vValue.end()) {
-            LOG(ERROR) << "Invalid value. Can't convert to one of " << strValueNames;
+            std::cout << "Invalid value. Can't convert to one of " << strValueNames<<std::endl;
             return std::string();
         }
         return split(strValueNames, ' ')[it - vValue.begin()];
@@ -331,7 +330,7 @@ private:
             double r = std::stod(strValue, &l);
             char c = strValue[l];
             if (c != 0 && c != 'k' && c != 'm') {
-                LOG(ERROR) << strName << " units: 1, K, M (lower case also allowed)";
+                std::cout<< strName << " units: 1, K, M (lower case also allowed)"<<std::endl;
             }
             *pBitRate = (unsigned)((c == 'm' ? 1000000 : (c == 'k' ? 1000 : 1)) * r);
         } catch (std::invalid_argument) {
@@ -344,7 +343,7 @@ private:
         try {
             *pInt = std::stoi(strValue);
         } catch (std::invalid_argument) {
-            LOG(ERROR) << strName << " need a value of positive number";
+            std::cout << strName << " need a value of positive number"<<std::endl;
             return false;
         }
         return true;
@@ -358,7 +357,7 @@ private:
             } else if (vQp.size() == 3) {
                 *pQp = {(unsigned)std::stoi(vQp[0]), (unsigned)std::stoi(vQp[1]), (unsigned)std::stoi(vQp[2])};
             } else {
-                LOG(ERROR) << strName << " qp_for_P_B_I or qp_P,qp_B,qp_I (no space is allowed)";
+                std::cout << strName << " qp_for_P_B_I or qp_P,qp_B,qp_I (no space is allowed)"<<std::endl;
                 return false;
             }
         } catch (std::invalid_argument) {

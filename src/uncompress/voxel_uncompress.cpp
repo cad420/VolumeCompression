@@ -6,7 +6,7 @@
 #include<VoxelCompression/voxel_uncompress/VoxelUncompress.h>
 #include<VoxelCompression/utils/NvCodecUtils.h>
 
-simplelogger::Logger* logger;
+
 
 /**
  *

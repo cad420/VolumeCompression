@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.16)
+
 project(VoxelCompression C CXX CUDA)
 
-
 find_package(CUDA REQUIRED)
+
 set(CMAKE_CXX_STANDARD 14)
+
 set(CMAKE_CUDA_STANDARD 14)
 
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -16,24 +18,13 @@ set(NVCODEC_INCLUDE_DIR ${NVCODEC_DIR}/include)
 
 set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
-
-#set(GLM_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/glm)
-
-
 set(VolumeReader_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/VolumeReader/include)
 
 include_directories(include)
 
 add_subdirectory(${SRC_DIR})
 
-#add_subdirectory(test)
-
-#add_subdirectory(${PROJECT_THIRD_PARTY_DIR}/glfw)
-
-
 add_subdirectory(test)
-
-
 
 add_subdirectory(tools)
 

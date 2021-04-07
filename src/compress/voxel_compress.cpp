@@ -9,7 +9,7 @@
 #include<iostream>
 #include<nvenc/CUDA/NvEncoderCuda.h>
 
-simplelogger::Logger* logger;
+//simplelogger::Logger* logger;
 
 /**
  * @note most 3 instances of encoders can create!
