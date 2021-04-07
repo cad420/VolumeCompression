@@ -14,7 +14,13 @@ target_include_directories(voxel_compress PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${NVCODEC_INCLUDE_DIR})
 
-set(NVENCODE_LIBS ${NVCODEC_LIB_DIR}/x64/nvencodeapi.lib)
+if(WIN32)
+    set(NVDECODE_LIBS ${NVCODEC_LIB_DIR}/x64/nvcuvid.lib)
+else()
+    set(NVDECODE_LIBS
+#            ${NVCODEC_LIB_DIR}/linux/stubs/x86_64/libnvcuvid.so
+            ${NVCODEC_LIB_DIR}/linux/stubs/x86_64/libnvcuvid-encode.so)
+endif()
 
 target_link_libraries(voxel_compress ${NVENCODE_LIBS})
 
