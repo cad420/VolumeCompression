@@ -10,6 +10,10 @@
 #include<array>
 #include<condition_variable>
 #include<mutex>
+#include<map>
+#include<cstring>
+#include<json.hpp>
+using json = nlohmann::json;
 
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
 #define VOXEL_COMPRESS_VERSION 1
@@ -201,6 +205,126 @@ namespace sv{
         std::mutex mtx;
         std::condition_variable cv;
     };
+
+    class LodFile{
+    public:
+        LodFile():valid(false),min_lod(-1),max_lod(-1){};
+        void open_lod_file(const std::string& path);
+        bool add_lod_file(int lod,const std::string& file_name);
+        void save_lod_files(const std::string& name,const std::string& ext);
+        int get_min_lod() const;
+        int get_max_lod() const;
+        std::string get_lod_file_path(int lod) ;
+    private:
+        void save_in_json(const std::string& name);
+        void save_in_txt(const std::string& name);
+        void open_in_json(const std::string& path);
+        void open_in_txt(const std::string& path);
+    private:
+        bool valid;
+        int min_lod,max_lod;
+        std::map<int,std::string> lod_files;
+    };
+
+    inline void LodFile::open_lod_file(const std::string &path) {
+
+        auto ext_idx = path.find_last_of('.');
+        if (ext_idx == std::string::npos) {
+            throw std::runtime_error("error file ext!");
+        }
+        auto ext=path.substr(ext_idx);
+        if(ext==".json"){
+            open_in_json(path);
+        }
+        else if(ext==".txt"){
+            open_in_txt(path);
+        }
+        else{
+            throw std::runtime_error("only support json or txt!");
+        }
+    }
+
+    inline void LodFile::open_in_txt(const std::string& path) {
+
+    }
+
+    inline void LodFile::open_in_json(const std::string& path) {
+        json j;
+        std::ifstream in(path);
+        in>>j;
+        min_lod=j["min_lod"];
+        max_lod=j["max_lod"];
+        for(int i=min_lod;i<=max_lod;i++){
+            lod_files[i]=j[std::to_string(i)];
+        }
+        if(min_lod>=0)
+            valid=true;
+    }
+    inline bool LodFile::add_lod_file(int lod, const std::string &file_name) {
+        if(!valid && lod>=0){
+            min_lod=max_lod=lod;
+            lod_files[lod]=file_name;
+            valid=true;
+        }
+        else if(valid && lod>=0){
+            if(!lod_files[lod].empty()){
+                std::cout<<"lod: "<<lod<<" exists file: "<<lod_files[lod]<<" will replace by "<<file_name<<std::endl;
+            }
+            if(lod<min_lod) min_lod=lod;
+            else if(lod>max_lod) max_lod=lod;
+            lod_files[lod]=file_name;
+        }
+        else{
+            std::cout<<"error: lod < 0"<<std::endl;
+            return false;
+        }
+
+    }
+
+    inline void LodFile::save_lod_files(const std::string &name, const std::string &ext) {
+        if(ext=="json"){
+            save_in_json(name);
+        }
+        else if(ext=="txt"){
+            save_in_txt(name);
+        }
+        else{
+            std::cout<<"wrong ext! save failed!"<<std::endl;
+        }
+
+    }
+
+    inline void LodFile::save_in_json(const std::string& name) {
+        json j;
+        j["max_lod"]=max_lod;
+        j["min_lod"]=min_lod;
+        for(int i=min_lod;i<=max_lod;i++){
+            j[std::to_string(i)]=lod_files[i];
+        }
+        std::ofstream out(name+".json");
+        out<<j.dump(4);
+    }
+
+    inline void LodFile::save_in_txt(const std::string& name) {
+
+    }
+
+    inline int LodFile::get_min_lod() const {
+        return min_lod;
+    }
+
+    inline int LodFile::get_max_lod() const {
+        return max_lod;
+    }
+
+    inline std::string LodFile::get_lod_file_path(int lod)  {
+        if(!valid || lod<min_lod || lod>max_lod){
+            throw std::runtime_error("get lod out of range");
+        }
+        return lod_files[lod];
+    }
+
+
 }
 
 

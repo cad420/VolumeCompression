@@ -20,7 +20,7 @@ set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
 set(VolumeReader_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/VolumeReader/include)
 
-include_directories(include)
+include_directories(include third_party)
 
 add_subdirectory(${SRC_DIR})
 

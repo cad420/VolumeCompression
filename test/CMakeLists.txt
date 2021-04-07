@@ -9,3 +9,5 @@ target_link_libraries(test_uncompress PUBLIC voxel_uncompress voxel_compress)
 
 
 add_executable(test_struct_size test_struct_size.cpp)
+
+add_executable(test_json test_json.cpp)
