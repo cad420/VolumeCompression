@@ -296,7 +296,7 @@ public:
 
         funcInit(pParams);
         std::cout<< NvEncoderInitParam().MainParamToString(pParams)<<std::endl;
-        std::cout << NvEncoderInitParam().FullParamToString(pParams)<<std::endl;
+//        std::cout << NvEncoderInitParam().FullParamToString(pParams)<<std::endl;
     }
 
 private:
