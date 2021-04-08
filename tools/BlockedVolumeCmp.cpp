@@ -45,7 +45,7 @@ int main(int argc,char** argv){
     std::cout<<header<<std::endl;
 
     RawVolumeReader raw_reader;
-    std::string file_dir="E:/mouse23389x29581x10296_512_2/";
+    std::string file_dir="E:/mouse_23389_29581_10296_512_2_lod0/";
     std::vector<uint8_t> buffer;
     buffer.assign(512*512*512,0);
     for(uint32_t z=0;z<header.block_dim_z;z++){

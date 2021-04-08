@@ -10,3 +10,5 @@ target_link_libraries(BlockVolumeUnCompress PRIVATE voxel_uncompress)
 add_executable(BlockedVolumeCmp BlockedVolumeCmp.cpp)
 target_include_directories(BlockedVolumeCmp PUBLIC ${VolumeReader_INCLUDE_DIR})
 target_link_libraries(BlockedVolumeCmp PRIVATE voxel_compress)
+
+add_executable(VolumeResample VolumeResample.cpp)
