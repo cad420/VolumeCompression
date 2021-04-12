@@ -12,8 +12,12 @@
 #include<functional>
 #include<cassert>
 #include<iostream>
+#include <utility>
 #include<vector>
-
+#include<tinytiffreader.h>
+//notice: STB_IMAGE_IMPLEMENTATION just need define once in .c or .cpp file
+//#define STB_IMAGE_IMPLEMENTATION
+//#include<stb_image.h>//can't load .tif
 
 #ifdef WIN32
 
@@ -103,19 +107,29 @@ public:
     enum class ResampleMethod {
         AVG, MAX
     };
-
-    VolumeResampler(const std::string &input, const std::string &output, int raw_x, int raw_y, int raw_z,
-                    int memory_limit, int times, ResampleMethod method = ResampleMethod::MAX)
-            : raw_x(raw_x), raw_y(raw_y), raw_z(raw_z), memory_limit(memory_limit), resample_times(times),
+    enum class InputFormat{
+        RAW,
+        TIF
+    };
+    VolumeResampler(const std::string &input, InputFormat input_format,std::string  prefix,const std::string &output, int raw_x, int raw_y, int raw_z,
+                    int memory_limit, int times, ResampleMethod method = ResampleMethod::MAX) noexcept
+            : input_path(input),input_format(input_format),prefix(std::move(prefix)),raw_x(raw_x), raw_y(raw_y), raw_z(raw_z), memory_limit(memory_limit), resample_times(times),
               method(method) {
-        in = std::ifstream(input.c_str(), std::ios::binary);
-        if (!in.is_open()) {
-            throw std::runtime_error("input file open failed");
+        if(input_format==InputFormat::RAW) {
+            in = std::ifstream(input.c_str(), std::ios::binary);
+            if (!in.is_open()) {
+                throw std::runtime_error("input file open failed");
+            }
         }
+        //write to single file
         out = std::ofstream(output.c_str(), std::ios::binary);
         if (!out.is_open()) {
             throw std::runtime_error("output file open failed");
         }
+
+
+
+
         int payload = (int64_t) raw_x * raw_y * resample_times / 1024/*KB*// 1024/*MB*// 1024/*GB*/;
         payload = payload > 0 ? payload : 1;
         int num = memory_limit / payload;
@@ -178,9 +192,21 @@ public:
                             std::unique_lock<std::mutex> read_lk(io_mtx);
                             io_cv.wait(read_lk, []() { return true; });
 
-                            in.seekg(std::ios::beg + payload_size * id);
+                            if(input_format==InputFormat::RAW){
 
-                            in.read(reinterpret_cast<char *>(payload.data()), payload_size);
+                                in.seekg(std::ios::beg + payload_size * id);
+
+                                in.read(reinterpret_cast<char *>(payload.data()), payload_size);
+                            }
+                            else if(input_format==InputFormat::TIF){
+                                for(int j=0;j<resample_times;j++){
+                                    std::stringstream ss;
+                                    ss<<input_path<<"/"<<prefix<<std::to_string(id*resample_times+j)<<".tif";
+
+                                }
+
+                            }
+
 //                            uint8_t max_item=0;
 //                            for(size_t i=0;i<payload.size();i++){
 //                                if((int)payload[i]>(int)max_item)
@@ -229,6 +255,9 @@ public:
     }
 
 private:
+    std::string input_path;
+    InputFormat input_format;
+    std::string prefix;
     int raw_x, raw_y, raw_z;
     int memory_limit;
     int resample_times;

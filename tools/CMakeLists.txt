@@ -12,3 +12,4 @@ target_include_directories(BlockedVolumeCmp PUBLIC ${VolumeReader_INCLUDE_DIR})
 target_link_libraries(BlockedVolumeCmp PRIVATE voxel_compress)
 
 add_executable(VolumeResample VolumeResample.cpp)
+target_link_libraries(VolumeResample PRIVATE TinyTIFFShared)

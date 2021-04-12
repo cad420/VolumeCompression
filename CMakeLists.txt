@@ -22,6 +22,8 @@ set(VolumeReader_INCLUDE_DIR ${PROJECT_THIRD_PARTY_DIR}/VolumeReader/include)
 
 include_directories(include third_party)
 
+include(third_party/TinyTiff.cmake)
+
 add_subdirectory(${SRC_DIR})
 
 add_subdirectory(test)

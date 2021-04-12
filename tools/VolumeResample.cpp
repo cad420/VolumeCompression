@@ -9,6 +9,8 @@ int main(int argc,char** argv)
 
     cmdline::parser cmd;
     cmd.add<std::string>("in",'i',"input file path",true);
+    cmd.add<std::string>("in_format",'f',"input data format: raw/tif",true,"raw",cmdline::oneof<std::string>("raw","tif"));
+    cmd.add<std::string>("prefix",'p',"prefix for input is tif format",false);
     cmd.add<std::string>("out",'o',"output file name",true);
     cmd.add<std::string>("out_dir",'d',"output file directory",false,".");
     cmd.add<int>("raw_x",'x',"x resolution of raw volume data",true);
@@ -20,6 +22,8 @@ int main(int argc,char** argv)
 
     cmd.parse_check(argc,argv);
     auto input_path=cmd.get<std::string>("in");
+    auto input_format=cmd.get<std::string>("in_format")=="raw"?VolumeResampler::InputFormat::RAW:VolumeResampler::InputFormat::TIF;
+    auto prefix=cmd.get<std::string>("prefix");
     auto output_name=cmd.get<std::string>("out");
     auto output_dir=cmd.get<std::string>("out_dir");
     auto output_path=output_dir+"/"+output_name;
@@ -30,7 +34,7 @@ int main(int argc,char** argv)
     auto times=cmd.get<int>("resample_times");
     auto method=cmd.get<std::string>("method");
 
-    VolumeResampler volume_resampler(input_path,output_path,raw_x,raw_y,raw_z,mem_limit,times,VolumeResampler::ResampleMethod::MAX);
+    VolumeResampler volume_resampler(input_path,input_format,prefix,output_path,raw_x,raw_y,raw_z,mem_limit,times,VolumeResampler::ResampleMethod::MAX);
     volume_resampler.print_args();
     volume_resampler.start_task();
 
