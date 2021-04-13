@@ -14,31 +14,9 @@
 #include<iostream>
 #include <utility>
 #include<vector>
-#include<tinytiffreader.h>
-//notice: STB_IMAGE_IMPLEMENTATION just need define once in .c or .cpp file
-//#define STB_IMAGE_IMPLEMENTATION
-//#include<stb_image.h>//can't load .tif
+#include <iomanip>
 
-#ifdef WIN32
-
-#include <windows.h>
-
-unsigned long long get_system_memory() {
-    MEMORYSTATUSEX status;
-    status.dwLength = sizeof(status);
-    GlobalMemoryStatusEx(&status);
-    return status.ullTotalPhys;
-}
-
-#else
-#include <unistd.h>
-unsigned long long get_system_memory()
-{
-    long pages = sysconf( _SC_PHYS_PAGES );
-    long page_size = sysconf( _SC_PAGE_SIZE );
-    return pages * page_size;
-}
-#endif
+#include<VoxelCompression/utils/util.h>
 
 class Worker {
 public:
@@ -179,11 +157,12 @@ public:
                     if (work_idx >= total_task_num) {
                         break;
                     }
-                    printf("start worker: %d, finish %.2f%%\n", work_idx, work_idx * 1.f / total_task_num * 100);
+                    printf("start worker: %d, about finish %.2f%%\n", work_idx, work_idx * 1.f / total_task_num * 100);
                     workers[i].set_busy(true);
                     if (tasks[i].joinable())
                         tasks[i].join();
                     tasks[i] = std::thread([&](Worker &worker_, int id) {
+//                        std::cout<<"id: "<<id<<std::endl;
                         std::vector<uint8_t> payload;
                         size_t payload_size = (size_t) raw_x * raw_y * resample_times;
                         payload.resize(payload_size, 0);
@@ -201,10 +180,17 @@ public:
                             else if(input_format==InputFormat::TIF){
                                 for(int j=0;j<resample_times;j++){
                                     std::stringstream ss;
-                                    ss<<input_path<<"/"<<prefix<<std::to_string(id*resample_times+j)<<".tif";
-
+                                    ss<<input_path<<"/"<<prefix<<std::setw(5)<<std::setfill('0')<<std::to_string(id*resample_times+j+1)<<".tif";
+//                                    printf("loading tif file: %s\n",ss.str().c_str());
+                                    std::vector<uint8_t> slice;
+                                    load_volume_tif(slice,ss.str());
+                                    if(slice.size()==(size_t)raw_x*raw_y){
+                                        memcpy(payload.data(),slice.data(),slice.size());
+                                    }
+                                    else{
+                                        throw std::runtime_error("load tif slice size not equal to raw_x*raw_y");
+                                    }
                                 }
-
                             }
 
 //                            uint8_t max_item=0;
