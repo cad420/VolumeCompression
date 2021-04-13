@@ -81,5 +81,6 @@ int main(int argc,char** argv)
     test_write();
     test_read();
     test_tif();
+    std::cout<<std::ceil(std::log10(256));
     return 0;
 }

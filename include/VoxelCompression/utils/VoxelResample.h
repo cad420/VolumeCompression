@@ -15,7 +15,7 @@
 #include <utility>
 #include<vector>
 #include <iomanip>
-
+#include <sstream>
 #include<VoxelCompression/utils/util.h>
 
 class Worker {
@@ -180,12 +180,12 @@ public:
                             else if(input_format==InputFormat::TIF){
                                 for(int j=0;j<resample_times;j++){
                                     std::stringstream ss;
-                                    ss<<input_path<<"/"<<prefix<<std::setw(5)<<std::setfill('0')<<std::to_string(id*resample_times+j+1)<<".tif";
+                                    ss<<input_path<<"/"<<prefix<<std::setw(std::ceil(log10(raw_z)))<<std::setfill('0')<<std::to_string(id*resample_times+j+1)<<".tif";
 //                                    printf("loading tif file: %s\n",ss.str().c_str());
                                     std::vector<uint8_t> slice;
                                     load_volume_tif(slice,ss.str());
                                     if(slice.size()==(size_t)raw_x*raw_y){
-                                        memcpy(payload.data(),slice.data(),slice.size());
+                                        memcpy(payload.data()+j*slice.size(),slice.data(),slice.size());
                                     }
                                     else{
                                         throw std::runtime_error("load tif slice size not equal to raw_x*raw_y");
