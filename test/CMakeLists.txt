@@ -22,3 +22,9 @@ add_executable(test_tif2raw test_tif2raw.cpp)
 target_link_libraries(test_tif2raw PRIVATE TinyTIFF)
 
 add_executable(test_raw_diff test_raw_diff.cpp)
+
+add_executable(test_read_tif_from_raw test_read_tif_from_raw.cpp)
+target_link_libraries(test_read_tif_from_raw PRIVATE TinyTIFF)
+
+add_executable(test_merge_tif test_merge_tif.cpp)
+target_link_libraries(test_merge_tif PRIVATE TinyTIFF)

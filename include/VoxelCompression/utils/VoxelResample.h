@@ -48,15 +48,18 @@ public:
         assert(busy);
         assert(x * y * 2 == data.size());
         size_t slice_size = x * y;
+
         //z-direction
         for (size_t i = 0; i < slice_size; i++) {
             data[i] = method(data[i], data[i + slice_size]);
         }
         //y-direction
         data.resize(slice_size);
+
         size_t modify_y = (y + 1) / 2;
         size_t modify_slice_y = modify_y * x;
         data.resize(modify_slice_y * 2, 0);
+
         for (size_t i = 0; i < modify_y; i++) {
             for (size_t j = 0; j < x; j++) {
                 data[j + i * x] = method(data[j + i * x * 2], data[j + x + i * x * 2]);
@@ -64,13 +67,17 @@ public:
         }
         //x-direction
         data.resize(modify_slice_y);
+
         size_t modify_x = (x + 1) / 2;
         size_t modify_slice_yx = modify_x * modify_y;
-        data.resize(modify_slice_yx * 2, 0);
-        for (size_t i = 0; i < modify_slice_yx; i++) {
-            data[i] = method(data[2 * i], data[2 * i + 1]);
+//        data.resize(modify_slice_yx * 2, 0);
+
+        for (size_t i = 0; i < modify_y; i++) {
+            for (size_t j = 0; j < modify_x; j++)
+                data[j + i * modify_x] = method(data[i * x + j * 2], j * 2 + 1 >= x ? 0 : data[i * x + j * 2 + 1]);
         }
         data.resize(modify_slice_yx);
+
     }
 
     void set_busy(bool status) { busy = status; }
@@ -85,15 +92,18 @@ public:
     enum class ResampleMethod {
         AVG, MAX
     };
-    enum class InputFormat{
+    enum class InputFormat {
         RAW,
         TIF
     };
-    VolumeResampler(const std::string &input, InputFormat input_format,std::string  prefix,const std::string &output, int raw_x, int raw_y, int raw_z,
+
+    VolumeResampler(const std::string &input, InputFormat input_format, std::string prefix, const std::string &output,
+                    int raw_x, int raw_y, int raw_z,
                     int memory_limit, int times, ResampleMethod method = ResampleMethod::MAX) noexcept
-            : input_path(input),input_format(input_format),prefix(std::move(prefix)),raw_x(raw_x), raw_y(raw_y), raw_z(raw_z), memory_limit(memory_limit), resample_times(times),
+            : input_path(input), input_format(input_format), prefix(std::move(prefix)), raw_x(raw_x), raw_y(raw_y),
+              raw_z(raw_z), memory_limit(memory_limit), resample_times(times),
               method(method) {
-        if(input_format==InputFormat::RAW) {
+        if (input_format == InputFormat::RAW) {
             in = std::ifstream(input.c_str(), std::ios::binary);
             if (!in.is_open()) {
                 throw std::runtime_error("input file open failed");
@@ -104,8 +114,6 @@ public:
         if (!out.is_open()) {
             throw std::runtime_error("output file open failed");
         }
-
-
 
 
         int payload = (int64_t) raw_x * raw_y * resample_times / 1024/*KB*// 1024/*MB*// 1024/*GB*/;
@@ -176,18 +184,18 @@ public:
                                 in.seekg(std::ios::beg + payload_size * id);
 
                                 in.read(reinterpret_cast<char *>(payload.data()), payload_size);
-                            }
-                            else if(input_format==InputFormat::TIF){
-                                for(int j=0;j<resample_times;j++){
+                            } else if (input_format == InputFormat::TIF) {
+                                for (int j = 0; j < resample_times; j++) {
                                     std::stringstream ss;
                                     ss<<input_path<<"/"<<prefix<<std::setw(std::ceil(log10(raw_z)))<<std::setfill('0')<<std::to_string(id*resample_times+j+1)<<".tif";
-//                                    printf("loading tif file: %s\n",ss.str().c_str());
+//                                    ss << input_path << "/" << prefix << std::setw(5) << std::setfill('0')
+//                                       << std::to_string(id * resample_times + j + 1) << ".tif";
+//                                    printf("loading tif file: %s\n", ss.str().c_str());
                                     std::vector<uint8_t> slice;
-                                    load_volume_tif(slice,ss.str());
-                                    if(slice.size()==(size_t)raw_x*raw_y){
-                                        memcpy(payload.data()+j*slice.size(),slice.data(),slice.size());
-                                    }
-                                    else{
+                                    load_volume_tif(slice, ss.str());
+                                    if (slice.size() == (size_t) raw_x * raw_y) {
+                                        memcpy(payload.data() + j * slice.size(), slice.data(), slice.size());
+                                    } else {
                                         throw std::runtime_error("load tif slice size not equal to raw_x*raw_y");
                                     }
                                 }

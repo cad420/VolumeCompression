@@ -58,6 +58,7 @@ void load_volume_tif(std::vector<uint8_t>& data,const std::string& path)
                 uint16_t samples=TinyTIFFReader_getSamplesPerPixel(tiffr);
                 uint16_t bitspersample=TinyTIFFReader_getBitsPerSample(tiffr, 0);
                 assert(samples==1 && bitspersample==8);
+//                std::cout<<"width: "<<width<<" height: "<<height<<std::endl;
                 data.resize(width*height);
                 TinyTIFFReader_getSampleData(tiffr,data.data(),0);
                 if (TinyTIFFReader_wasError(tiffr)){
