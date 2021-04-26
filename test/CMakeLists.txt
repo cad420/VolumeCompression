@@ -28,3 +28,7 @@ target_link_libraries(test_read_tif_from_raw PRIVATE TinyTIFF)
 
 add_executable(test_merge_tif test_merge_tif.cpp)
 target_link_libraries(test_merge_tif PRIVATE TinyTIFF)
+
+add_executable(test_gen_bmp test_gen_bmp.cpp)
+target_include_directories(test_gen_bmp PRIVATE
+        ${PROJECT_SOURCE_DIR}/third_party)

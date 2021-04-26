@@ -76,11 +76,21 @@ void test_tif(){
     }
     TinyTIFFReader_close(tiffr);
 }
+void test_tf_read(){
+    json j;
+    std::ifstream in("tf.json");
+    in>>j;
+    int point_num=j["point_num"];
+    auto points=j["points"];
+    auto p=points["0"];
+    double r=p[0];
+    double g=p[1];
+    double b=p[2];
+    double a=p[3];
+    std::cout<<r<<" "<<g<<" "<<b<<" "<<a<<std::endl;
+}
 int main(int argc,char** argv)
 {
-    test_write();
-    test_read();
-    test_tif();
-    std::cout<<std::ceil(std::log10(256));
+
     return 0;
 }

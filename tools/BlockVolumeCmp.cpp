@@ -9,11 +9,11 @@
 
 int main(int argc,char** argv)
 {
-    const char* in_file_name="mouselod1_23389_29581_10296.raw";
-    const char* out_file_name="mouse_11695_14791_5148_9p2_lod1.h264";
-    uint32_t m_raw_x=11695;
-    uint32_t m_raw_y=14791;
-    uint32_t m_raw_z=5148;
+    const char* in_file_name="mouselod6_366_463_161_uint8.raw";
+    const char* out_file_name="mouse_23389_29581_10296_9p2_lod6.h264";
+    uint32_t m_raw_x=366;
+    uint32_t m_raw_y=463;
+    uint32_t m_raw_z=161;
     uint32_t m_log_block_length=9;
     uint32_t m_padding=2;
     uint32_t m_frame_width=512;

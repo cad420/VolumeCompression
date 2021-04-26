@@ -9,11 +9,11 @@
 #include<cassert>
 int main(){
 
-    size_t raw_x=11695;
-    size_t raw_y=14791;
-    size_t raw_z=5148;
-    size_t z=2001;
-    std::string file_name="mouselod1_23389_29581_10296.raw";
+    size_t raw_x=1462;
+    size_t raw_y=1849;
+    size_t raw_z=644;
+    size_t z=250;
+    std::string file_name="mouselod4_1462_1849_644_uint8.raw";
     std::ifstream in(file_name,std::ios::binary);
     if(!in.is_open()){
         std::cout<<"open file failed: "<<file_name<<std::endl;
