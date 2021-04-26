@@ -7,6 +7,7 @@ list(
 cuda_add_library(voxel_uncompress ${VOXEL_UNCOMPRESS_SRC})
 
 target_include_directories(voxel_uncompress PUBLIC
+        ${PROJECT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${NVCODEC_INCLUDE_DIR}
         ${CUDA_INCLUDE_DIRS})
