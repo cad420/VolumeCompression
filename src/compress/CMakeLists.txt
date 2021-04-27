@@ -8,7 +8,7 @@ list(
         nvenc/CUDA/NvEncoderCuda.cpp
 )
 
-cuda_add_library(voxel_compress ${VOXEL_COMPRESS_SRC})
+cuda_add_library(voxel_compress STATIC ${VOXEL_COMPRESS_SRC})
 
 target_include_directories(voxel_compress PUBLIC
         ${PROJECT_SOURCE_DIR}/include

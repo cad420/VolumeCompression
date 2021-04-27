@@ -4,7 +4,7 @@ list(
         voxel_uncompress.cpp
         nvdec/NvDecoder.cpp
 )
-cuda_add_library(voxel_uncompress ${VOXEL_UNCOMPRESS_SRC})
+cuda_add_library(voxel_uncompress STATIC ${VOXEL_UNCOMPRESS_SRC})
 
 target_include_directories(voxel_uncompress PUBLIC
         ${PROJECT_SOURCE_DIR}/include
