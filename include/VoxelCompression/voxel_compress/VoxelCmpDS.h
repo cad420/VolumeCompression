@@ -72,6 +72,7 @@ namespace sv{
             in.open(file_name,std::ios::in|std::ios::binary);
             if(!in.is_open()){
                 std::cout<<"File open failed!"<<std::endl;
+                throw std::runtime_error("Volume data file open failed!");
             }
         }
         Reader(std::fstream&& in):in(std::forward<std::fstream>(in)){}
