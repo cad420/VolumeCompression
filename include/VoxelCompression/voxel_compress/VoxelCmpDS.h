@@ -12,7 +12,7 @@
 #include<mutex>
 #include<map>
 #include<cstring>
-#include<json.hpp>
+#include<VoxelCompression/utils/json.hpp>
 using json = nlohmann::json;
 
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
