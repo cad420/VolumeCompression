@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.14)
 
 project(VoxelCompression C CXX CUDA)
 
-option(BUILD_TEST "whether build test" ON)
-option(BUILD_TOOL "whether build tool" ON)
+option(BUILD_TEST "whether build test" OFF)
+option(BUILD_TOOL "whether build tool" OFF)
 
 
 find_package(CUDA REQUIRED)
