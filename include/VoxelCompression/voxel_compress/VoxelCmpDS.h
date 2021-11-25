@@ -215,6 +215,7 @@ namespace sv{
         void save_lod_files(const std::string& name,const std::string& ext);
         int get_min_lod() const;
         int get_max_lod() const;
+        auto get_volume_space() const -> std::array<float,3>;
         std::string get_lod_file_path(int lod) ;
     private:
         void save_in_json(const std::string& name);
@@ -224,6 +225,7 @@ namespace sv{
     private:
         bool valid;
         int min_lod,max_lod;
+        std::array<float,3> volume_space;
         std::map<int,std::string> lod_files;
     };
 
@@ -255,6 +257,7 @@ namespace sv{
         in>>j;
         min_lod=j["min_lod"];
         max_lod=j["max_lod"];
+        volume_space = j.at("space");
         for(int i=min_lod;i<=max_lod;i++){
             lod_files[i]=j[std::to_string(i)];
         }
@@ -324,9 +327,11 @@ namespace sv{
         }
         return lod_files[lod];
     }
+    inline auto LodFile::get_volume_space() const -> std::array<float, 3> {
+        return volume_space;
+    }
 
-
-}
+    }
 
 
 
