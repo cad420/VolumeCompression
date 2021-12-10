@@ -24,11 +24,11 @@ int main()
     data1.clear();data2.clear();
 
     Worker worker;
-    worker.set_busy(false);
+    worker.set_busy(true);
     worker.setup_task<uint8_t>(x,y,data,[](uint8_t a, uint8_t b)->uint8_t {
-        return a > b ? a : b;
+        return (a+b)/2;
     });
-    TinyTIFFWriterFile* tif=TinyTIFFWriter_open("test_merge.tif",8,TinyTIFFWriter_UInt,1,(x+1)/2,(y+1)/2,TinyTIFFWriter_Greyscale);
+    TinyTIFFWriterFile* tif=TinyTIFFWriter_open("test_merge_avg.tif",8,TinyTIFFWriter_UInt,1,(x+1)/2,(y+1)/2,TinyTIFFWriter_Greyscale);
     if(tif){
         TinyTIFFWriter_writeImage(tif,data.data());
     }

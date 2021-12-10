@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(VoxelCompression C CXX CUDA)
 
 option(BUILD_TEST "whether build test" OFF)
-option(BUILD_TOOL "whether build tool" OFF)
+option(BUILD_TOOL "whether build tool" ON)
 
 
 find_package(CUDA REQUIRED)
@@ -20,18 +20,12 @@ set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
 include_directories(include third_party)
 
-
-
-
-
 add_subdirectory(src)
 
 if(BUILD_TEST)
     add_subdirectory(test)
-    include(third_party/TinyTiff.cmake)
 endif()
 
 if(BUILD_TOOL)
     add_subdirectory(tools)
-    include(third_party/VolumeReader.cmake)
 endif()

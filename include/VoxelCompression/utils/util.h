@@ -2,18 +2,15 @@
 // Created by wyz on 2021/4/13.
 //
 
-#ifndef VOXELCOMPRESSION_UTIL_H
-#define VOXELCOMPRESSION_UTIL_H
+#pragma once
 
 #include<vector>
 #include<cassert>
+#include<string>
+#include<iostream>
 
-#include<tinytiffreader.h>
-//notice: STB_IMAGE_IMPLEMENTATION just need define once in .c or .cpp file
-//#define STB_IMAGE_IMPLEMENTATION
-//#include<stb_image.h>//can't load .tif
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #include <windows.h>
 
@@ -34,6 +31,11 @@ unsigned long long get_system_memory()
 }
 #endif
 
+#if defined(VoxelResampleIMPL) || defined(TinyTIFFIMPL)
+#include<tinytiffreader.h>
+//notice: STB_IMAGE_IMPLEMENTATION just need define once in .c or .cpp file
+//#define STB_IMAGE_IMPLEMENTATION
+//#include<stb_image.h>//can't load .tif
 //just for volume tif that frame is 1 and data format is unsigned char(uint8_t)
 void load_volume_tif(std::vector<uint8_t>& data,const std::string& path)
 {
@@ -70,8 +72,4 @@ void load_volume_tif(std::vector<uint8_t>& data,const std::string& path)
     }
     TinyTIFFReader_close(tiffr);
 }
-
-
-
-
-#endif //VOXELCOMPRESSION_UTIL_H
+#endif

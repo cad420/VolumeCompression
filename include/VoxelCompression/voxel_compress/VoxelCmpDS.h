@@ -2,17 +2,18 @@
 // Created by wyz on 2021/3/1.
 //
 
-#ifndef VOXELCOMPRESSION_VOXELCMPDS_H
-#define VOXELCOMPRESSION_VOXELCMPDS_H
-#include<iostream>
-#include<vector>
-#include<fstream>
-#include<array>
-#include<condition_variable>
-#include<mutex>
-#include<map>
-#include<cstring>
-#include<VoxelCompression/utils/json.hpp>
+#pragma once
+
+#include <array>
+#include <condition_variable>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <json.hpp>
+#include <map>
+#include <mutex>
+#include <vector>
+
 using json = nlohmann::json;
 
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
@@ -62,10 +63,7 @@ namespace sv{
             return os;
         }
     };
-    struct Data{
-        uint32_t frame_size;
-        //std::vector<uint8_t> frame_data;
-    };
+
     class Reader{
     public:
         Reader(const char* file_name){
@@ -83,7 +81,7 @@ namespace sv{
             in.seekg(std::ios::beg);
             in.read(reinterpret_cast<char*>(&header),sizeof(header));
             std::cout<<header;
-            if(header.identifier!=VOXEL_COMPRESS_FILE_IDENTIFIER)\
+            if(header.identifier!=VOXEL_COMPRESS_FILE_IDENTIFIER)
                 throw std::runtime_error("file format error!");
             index_beg=sizeof(header);
             block_num=header.block_dim_x*header.block_dim_y*header.block_dim_z;
@@ -95,37 +93,28 @@ namespace sv{
                 indexes.resize(block_num);
             }
             in.seekg(std::ios::beg+index_beg);
-//            uint64_t max_size=0;
+
             for(size_t i=0;i<block_num;i++){
                 in.read(reinterpret_cast<char*>(&indexes[i]),sizeof(sv::Index));
-//                std::cout<<indexes[i];
-//                if(indexes[i].size>max_size)
-//                    max_size=indexes[i].size;
             }
-//            std::cout<<"max size: "<<max_size<<std::endl;
         }
         void read_packet(const std::array<uint32_t,3>& index,std::vector<std::vector<uint8_t>>& packet){
             {
                 std::unique_lock<std::mutex> lk(mtx);
                 cv.wait(lk,[](){return true;});
-//                std::cout<<"start read"<<std::endl;
+
                 for(auto& it:indexes){
                     if(it.index_x==index[0] && it.index_y==index[1] && it.index_z==index[2]){
-//                    std::cout<<"find!!!"<<std::endl;
-//                    std::cout<<it<<std::endl;
                         in.seekg(std::ios::beg+data_beg+it.offset);
                         uint64_t offset=0,frame_size=0;
                         while(offset<it.size){
-//                        std::cout<<"offset: "<<offset<<"\tsize: "<<it.size<<std::endl;
                             in.read(reinterpret_cast<char*>(&frame_size),sizeof(uint64_t));
-//                        std::cout<<"frame_size: "<<frame_size<<std::endl;
                             std::vector<uint8_t> tmp;
                             tmp.resize(frame_size);
                             in.read(reinterpret_cast<char*>(tmp.data()),frame_size);
                             packet.push_back(tmp);
                             offset+=sizeof(uint64_t)+frame_size;
                         }
-//                        std::cout<<"finish read packet"<<std::endl;
                         break;
                     }
                 }
@@ -333,6 +322,3 @@ namespace sv{
 
     }
 
-
-
-#endif //VOXELCOMPRESSION_VOXELCMPDS_H

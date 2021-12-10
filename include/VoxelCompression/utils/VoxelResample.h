@@ -1,10 +1,15 @@
 //
 // Created by wyz on 2021/4/8.
 //
+//
+//
+/**
+ * @file using this should link library tinyTIFF and add "#define VoxelResampleIMPL" before include this file
+ */
 
-#ifndef VOXELCOMPRESSION_VOXELRESAMPLE_H
-#define VOXELCOMPRESSION_VOXELRESAMPLE_H
+#pragma once
 
+#ifdef VoxelResampleIMPL
 #include<fstream>
 #include<thread>
 #include<atomic>
@@ -26,21 +31,6 @@ public:
 
     bool is_busy() const {
         return busy;
-    }
-
-    template<class T, int times>
-    void
-    setup_task(size_t x, size_t y, std::vector<T> &data, std::function<T(const std::vector<T> &, int)> method) {
-        assert(busy);
-        assert(x * y * times == data.size());
-        size_t slice_size = x * y;
-        for (size_t i = 0; i < slice_size; i++) {
-            std::vector<T> elements;
-            for (int t = 0; t < times; t++) {
-
-            }
-        }
-
     }
 
     template<class T>
@@ -99,9 +89,9 @@ public:
 
     VolumeResampler(const std::string &input, InputFormat input_format, std::string prefix, const std::string &output,
                     int raw_x, int raw_y, int raw_z,
-                    int memory_limit, int times, ResampleMethod method = ResampleMethod::MAX) noexcept
+                    int memory_limit, ResampleMethod method = ResampleMethod::MAX) noexcept
             : input_path(input), input_format(input_format), prefix(std::move(prefix)), raw_x(raw_x), raw_y(raw_y),
-              raw_z(raw_z), memory_limit(memory_limit), resample_times(times),
+              raw_z(raw_z), memory_limit(memory_limit), resample_times(2),
               method(method) {
         if (input_format == InputFormat::RAW) {
             in = std::ifstream(input.c_str(), std::ios::binary);
@@ -144,7 +134,6 @@ public:
         std::mutex io_mtx;
         std::condition_variable io_cv;
         while (current_task_idx < total_task_num) {
-//            std::cout<<current_task_idx<<std::endl;
             //first wait for available worker
             {
                 std::unique_lock<std::mutex> lk(mtx);
@@ -160,7 +149,6 @@ public:
             //second assign task to available worker
             for (int i = 0; i < workers.size(); i++) {
                 if (!workers[i].is_busy()) {
-//                    std::cout<<"find worker not busy"<<std::endl;
                     int work_idx = current_task_idx++;
                     if (work_idx >= total_task_num) {
                         break;
@@ -170,7 +158,6 @@ public:
                     if (tasks[i].joinable())
                         tasks[i].join();
                     tasks[i] = std::thread([&](Worker &worker_, int id) {
-//                        std::cout<<"id: "<<id<<std::endl;
                         std::vector<uint8_t> payload;
                         size_t payload_size = (size_t) raw_x * raw_y * resample_times;
                         payload.resize(payload_size, 0);
@@ -188,9 +175,7 @@ public:
                                 for (int j = 0; j < resample_times; j++) {
                                     std::stringstream ss;
                                     ss<<input_path<<"/"<<prefix<<std::setw(std::ceil(log10(raw_z)))<<std::setfill('0')<<std::to_string(id*resample_times+j+1)<<".tif";
-//                                    ss << input_path << "/" << prefix << std::setw(5) << std::setfill('0')
-//                                       << std::to_string(id * resample_times + j + 1) << ".tif";
-//                                    printf("loading tif file: %s\n", ss.str().c_str());
+//                                    ss<<input_path<<"/"<<prefix<<std::setw(5)<<std::setfill('0')<<std::to_string(id*resample_times+j+1)<<".tif";
                                     std::vector<uint8_t> slice;
                                     load_volume_tif(slice, ss.str());
                                     if (slice.size() == (size_t) raw_x * raw_y) {
@@ -201,43 +186,39 @@ public:
                                 }
                             }
 
-//                            uint8_t max_item=0;
-//                            for(size_t i=0;i<payload.size();i++){
-//                                if((int)payload[i]>(int)max_item)
-//                                    max_item=payload[i];
-//                            }
-//                            std::cout<<"max item is: "<<(int)max_item<<std::endl;
                             io_cv.notify_one();
                         }
 
                         //resample
-                        worker_.setup_task<uint8_t>(raw_x, raw_y, payload, [](uint8_t a, uint8_t b) -> uint8_t {
+                        if(method==ResampleMethod::MAX){
+                          worker_.setup_task<uint8_t>(raw_x, raw_y, payload, [](uint8_t a, uint8_t b) -> uint8_t {
                             return a > b ? a : b;
-                        });
+                          });
+                        }
+                        else if(method==ResampleMethod::AVG){
+                          worker_.setup_task<uint8_t>(raw_x, raw_y, payload, [](uint8_t a, uint8_t b) -> uint8_t {
+                            return (a + b) / 2;
+                          });
+                        }
 
                         //write
                         {
                             std::unique_lock<std::mutex> write_lk(io_mtx);
                             io_cv.wait(write_lk, []() { return true; });
                             out.seekp(std::ios::beg + payload.size() * id);
-//                            uint8_t max_item=0;
-//                            for(size_t i=0;i<payload.size();i++){
-//                                if(payload[i]>max_item)
-//                                    max_item=payload[i];
-//                            }
-//                            std::cout<<"max item is: "<<(int)max_item<<std::endl;
+
                             out.write(reinterpret_cast<char *>(payload.data()), payload.size());
                             io_cv.notify_one();
                         }
                         worker_.set_busy(false);
                         worker_cv.notify_one();
-//                        std::cout<<"finish task"<<std::endl;
+
                     }, std::ref(workers[i]), work_idx);
 
-//                    std::cout<<"after create thread"<<std::endl;
+
                 }
             }
-//            std::cout<<"after one turn"<<std::endl;
+
         }
         for (int i = 0; i < tasks.size(); i++) {
             if (tasks[i].joinable())
@@ -260,7 +241,6 @@ private:
     std::ofstream out;
     std::vector<Worker> workers;
     std::vector<std::thread> tasks;
-
 };
+#endif
 
-#endif //VOXELCOMPRESSION_VOXELRESAMPLE_H
