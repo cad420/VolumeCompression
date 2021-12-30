@@ -19,7 +19,7 @@ else()
 #            ${NVCODEC_LIB_DIR}/linux/stubs/x86_64/libnvcuvid-encode.so
             )
 endif()
-target_link_libraries(voxel_uncompress ${CUDA_CUDA_LIBRARY} ${NVDECODE_LIBS})
+target_link_libraries(voxel_uncompress ${CUDA_LIBRARIES} ${NVDECODE_LIBS})
 set_target_properties(
         voxel_uncompress
         PROPERTIES
