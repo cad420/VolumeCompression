@@ -16,6 +16,8 @@ int main(int argc,char** argv){
         cmd.add<std::string>("voxel_type",'t',"voxel type",false,"uint8",
                              cmdline::oneof<std::string>("uint8","int8","int16","uint16","float16",
                                             "uint32","int32","float32"));
+        cmd.add<uint32_t>("encode_frame_w",0,"",true,0);
+        cmd.add<uint32_t>("encode_frame_h",0,"",true,0);
         cmd.parse_check(argc,argv);
 
         auto input = cmd.get<std::string>("input");
@@ -26,8 +28,8 @@ int main(int argc,char** argv){
         uint32_t log = cmd.get<int>("log");
         uint32_t padding = cmd.get<int>("padding");
         uint32_t block_length = std::pow(2,log);
-        uint32_t frame_width = block_length;
-        uint32_t frame_height = block_length;
+        uint32_t frame_width = cmd.get<uint32_t>("encode_frame_w");
+        uint32_t frame_height = cmd.get<uint32_t>("encode_frame_h");
         uint32_t voxel_type = VOXEL_UNKNOWN;
         auto vt = cmd.get<std::string>("voxel_type");
         if(vt == "uint8"){
@@ -86,14 +88,14 @@ int main(int argc,char** argv){
         while(!reader.isEmpty()){
             auto block = reader.getBlock();
             std::vector<std::vector<uint8_t >> packets;
-            {
-                std::string name = std::to_string(block.index[0])+"_"
-                                   +std::to_string(block.index[1])+"_"
-                                   +std::to_string(block.index[2])+".raw";
-                std::ofstream out(name,std::ios::binary);
-                out.write(reinterpret_cast<char*>(block.data.data()),block.data.size());
-                out.close();
-            }
+//            {
+//                std::string name = std::to_string(block.index[0])+"_"
+//                                   +std::to_string(block.index[1])+"_"
+//                                   +std::to_string(block.index[2])+".raw";
+//                std::ofstream out(name,std::ios::binary);
+//                out.write(reinterpret_cast<char*>(block.data.data()),block.data.size());
+//                out.close();
+//            }
             cmp.compress(block.data.data(),block.data.size(),packets);
             writer.write_packet(block.index,packets);
         }

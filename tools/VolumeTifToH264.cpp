@@ -116,6 +116,8 @@ int main(int argc,char** argv){
     cmd.add<uint32_t>("end_z",0,"volume read z-index end(not include)",false,uint32_t(-1));
     cmd.add<uint32_t>("compress",'c',"0/1 represent if tif saved with compression",false,0,cmdline::oneof<uint32_t>(0,1));
     cmd.add<uint32_t>("save_tif",0,"0/1 represent if save tif",true,0,cmdline::oneof<uint32_t>(0,1));
+    cmd.add<uint32_t>("encode_frame_w",0,"",true);
+    cmd.add<uint32_t>("encode_frame_h",0,"",true);
     cmd.parse_check(argc,argv);
 
     std::string input = cmd.get<std::string>("input");
@@ -143,6 +145,10 @@ int main(int argc,char** argv){
 
     bool compress = cmd.get<uint32_t>("compress");
     bool save_tif = cmd.get<uint32_t>("save_tif");
+
+    uint32_t frame_width = cmd.get<uint32_t>("encode_frame_w");
+    uint32_t frame_height = cmd.get<uint32_t>("encode_frame_h");
+
     uint32_t block_length = 1 << log;
     uint32_t no_padding_block_length = block_length - padding * 2;
     uint32_t x_count = (raw_x + no_padding_block_length - 1) / no_padding_block_length;
@@ -261,8 +267,8 @@ int main(int argc,char** argv){
     header.block_dim_z = reader.getDim()[2];
     header.log_block_length = log;
     header.padding = padding;
-    header.frame_width = block_length;
-    header.frame_height = block_length;
+    header.frame_width = frame_height;
+    header.frame_height = frame_width;
     header.codec_method = 0;
     header.voxel = voxel;
 
