@@ -12,7 +12,7 @@
 #include <queue>
 #include <string>
 #include <vector>
-
+#include "RawStream.hpp"
 #define DEFAULT_VALUE 0
 
 /**
@@ -27,6 +27,7 @@ class BlockVolumeReader
         uint32_t raw_x;
         uint32_t raw_y;
         uint32_t raw_z;
+        size_t voxel_size = 1;//default
         uint32_t block_length;
         uint32_t padding;
         uint32_t mem_limit = 32; // GB
@@ -67,6 +68,10 @@ class BlockVolumeReader
 
     std::array<uint32_t, 3> getDim() const;
 
+    void set_batch_read_turn_and_count(int turn,int count);
+
+    void set_raw_stream(std::unique_ptr<RawStream> stream);
+
   private:
     struct Block
     {
@@ -81,7 +86,7 @@ class BlockVolumeReader
         Token
     };
 
-    void set_mem_limit(uint32_t memLimit);
+    void set_mem_limit(uint64_t memLimit);
 
     void setup_raw_volume_info(RawVolumeInfo raw_volume_info);
 
@@ -96,21 +101,23 @@ class BlockVolumeReader
 
     bool read_patch_enable();
 
+
   private:
     std::string input_file_path;
     uint32_t raw_x;
     uint32_t raw_y;
     uint32_t raw_z;
+    size_t voxel_size;
     uint32_t block_length;
     uint32_t padding;
 
     uint32_t modify_x, modify_y, modify_z; // equal to dim*block_length_nopadding
     uint32_t block_length_nopadding;
 
-    std::fstream in;
+//    std::fstream in;
     std::array<uint32_t, 3> dim;
     uint32_t total_block_num;
-    uint64_t block_byte_size; // block_length^3
+    uint64_t block_byte_size; // block_length^3 * voxel_size;
     uint32_t batch_read_cnt;  // total batch read number
     uint32_t batch_read_turn; // current batch read turn
     uint32_t block_num_per_batch;
@@ -131,13 +138,16 @@ class BlockVolumeReader
         std::vector<BlockState> block_states; // size equal to total block count
     } block_manager;
     std::thread read_task;
+
+    //stream reader
+    std::unique_ptr<RawStream> stream;
 };
 
 inline BlockVolumeReader::BlockVolumeReader(BlockVolumeReader::RawVolumeInfo raw_volume_info)
 {
     setup_raw_volume_info(raw_volume_info);
 }
-inline void BlockVolumeReader::set_mem_limit(uint32_t memLimit)
+inline void BlockVolumeReader::set_mem_limit(uint64_t memLimit)
 {
     uint64_t mem_limit_byte_size = memLimit << 30;
     if (mem_limit_byte_size < batch_cached_byte_size * 2)
@@ -148,17 +158,18 @@ inline void BlockVolumeReader::set_mem_limit(uint32_t memLimit)
 }
 inline void BlockVolumeReader::setup_raw_volume_info(BlockVolumeReader::RawVolumeInfo raw_volume_info)
 {
-    in.open(raw_volume_info.input_file_path.c_str(), std::ios::in | std::ios::binary);
-    if (!in.is_open())
-    {
-        throw std::runtime_error("raw volume file open failed!");
-    }
+//    in.open(raw_volume_info.input_file_path.c_str(), std::ios::in | std::ios::binary);
+//    if (!in.is_open())
+//    {
+//        throw std::runtime_error("raw volume file open failed!");
+//    }
 
     {
         input_file_path = raw_volume_info.input_file_path;
         raw_x = raw_volume_info.raw_x;
         raw_y = raw_volume_info.raw_y;
         raw_z = raw_volume_info.raw_z;
+        voxel_size = raw_volume_info.voxel_size;
         block_length = raw_volume_info.block_length;
         padding = raw_volume_info.padding;
 
@@ -176,7 +187,7 @@ inline void BlockVolumeReader::setup_raw_volume_info(BlockVolumeReader::RawVolum
 
         this->total_block_num = this->dim[0] * this->dim[1] * this->dim[2];
         // consider block_length with padding
-        this->block_byte_size = block_length * block_length * block_length;
+        this->block_byte_size = block_length * block_length * block_length * voxel_size;
         this->batch_read_cnt = this->dim[1] * this->dim[2];
         this->batch_read_turn = 0;
         this->block_num_per_batch = this->dim[0];
@@ -190,9 +201,17 @@ inline void BlockVolumeReader::setup_raw_volume_info(BlockVolumeReader::RawVolum
         this->block_manager.block_states.assign(this->total_block_num, UnRead);
         this->block_manager.cur_cached_block_num = 0;
     }
+
 }
 inline void BlockVolumeReader::startRead()
 {
+    if(!stream){
+        std::cout<<"stream default open as raw"<<std::endl;
+        stream = std::make_unique<RawStream>(raw_x,raw_y,raw_z,voxel_size);
+        stream->open(input_file_path);
+    }
+
+
     static bool first = true;
     if (!first)
         return;
@@ -242,17 +261,19 @@ inline void BlockVolumeReader::read_patch_blocks()
 {
     std::vector<uint8_t> read_buffer;
 
-    uint64_t read_batch_size = (uint64_t)block_length * block_length * (modify_x + 2 * padding);
+    uint64_t read_batch_size = (uint64_t)block_length * block_length * (modify_x + 2 * padding) * voxel_size;
     read_buffer.assign(read_batch_size, DEFAULT_VALUE);
-
+//    std::cout<<read_buffer.size()<<std::endl;
+//    std::cout<<read_buffer.max_size()<<std::endl;
+    
     uint32_t z = this->batch_read_turn / this->dim[1];
     uint32_t y = this->batch_read_turn % this->dim[1];
     uint64_t batch_slice_read_num = 0;
     uint64_t batch_slice_line_read_num = 0;
-    uint64_t batch_read_pos = 0;
-    uint64_t batch_slice_size = block_length * (modify_x + 2 * padding);
-    uint64_t raw_slice_size = raw_x * raw_y;
-    uint64_t y_offset, z_offset;
+    uint64_t batch_read_pos = 0;//in bytes
+    uint64_t batch_slice_size = block_length * (modify_x + 2 * padding) * voxel_size; //in bytes
+    uint64_t raw_slice_size = raw_x * raw_y * voxel_size; //in bytes
+    uint64_t y_offset, z_offset;//in voxel
 
     if (z == 0 && z == (dim[2] - 1))
     { // for z==1
@@ -273,13 +294,13 @@ inline void BlockVolumeReader::read_patch_blocks()
         else if (y == (dim[1] - 1))
         {
             y_offset = 0;
-            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x;
+            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = raw_y - y * block_length_nopadding + padding;
         }
         else
         {
             y_offset = 0;
-            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x;
+            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = block_length_nopadding + 2 * padding;
         }
     }
@@ -302,13 +323,13 @@ inline void BlockVolumeReader::read_patch_blocks()
         else if (y == (dim[1] - 1))
         {
             y_offset = 0;
-            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x;
+            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = raw_y - y * block_length_nopadding + padding;
         }
         else
         {
             y_offset = 0;
-            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x;
+            batch_read_pos = (uint64_t)(y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = block_length_nopadding + 2 * padding;
         }
     }
@@ -332,14 +353,14 @@ inline void BlockVolumeReader::read_patch_blocks()
         {
             y_offset = 0;
             batch_read_pos = (uint64_t)(z * block_length_nopadding - padding) * raw_slice_size +
-                             (y * block_length_nopadding - padding) * raw_x;
+                             (y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = raw_y - y * block_length_nopadding + padding;
         }
         else
         {
             y_offset = 0;
             batch_read_pos = (uint64_t)(z * block_length_nopadding - padding) * raw_slice_size +
-                             (y * block_length_nopadding - padding) * raw_x;
+                             (y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = block_length_nopadding + 2 * padding;
         }
     }
@@ -351,7 +372,7 @@ inline void BlockVolumeReader::read_patch_blocks()
         if (y == 0 && y == (dim[1] - 1))
         {
             y_offset = padding;
-            batch_read_pos = (uint64_t)(z * block_length_nopadding - padding) * raw_slice_size;
+            batch_read_pos = (uint64_t)(z * block_length_nopadding - padding) * raw_slice_size ;
             batch_slice_line_read_num = raw_y;
         }
         else if (y == 0)
@@ -364,32 +385,35 @@ inline void BlockVolumeReader::read_patch_blocks()
         {
             y_offset = 0;
             batch_read_pos = (uint64_t)(z * block_length_nopadding - padding) * raw_slice_size +
-                             (y * block_length_nopadding - padding) * raw_x;
+                             (y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = raw_y - y * block_length_nopadding + padding;
         }
         else
         {
             y_offset = 0;
             batch_read_pos = (uint64_t)(z * block_length_nopadding - padding) * raw_slice_size +
-                             (y * block_length_nopadding - padding) * raw_x;
+                             (y * block_length_nopadding - padding) * raw_x * voxel_size;
             batch_slice_line_read_num = block_length_nopadding + 2 * padding;
         }
     }
 
     for (uint64_t i = 0; i < batch_slice_read_num; i++)
     {
-        in.seekg(batch_read_pos + i * raw_slice_size, std::ios::beg);
+//        in.seekg(batch_read_pos + i * raw_slice_size, std::ios::beg);
+        stream->seekg(batch_read_pos,i);
 
         std::vector<uint8_t> read_batch_slice_buffer;
-        read_batch_slice_buffer.assign(raw_x * batch_slice_line_read_num, DEFAULT_VALUE);
+        read_batch_slice_buffer.assign(raw_x * voxel_size * batch_slice_line_read_num, DEFAULT_VALUE);
 
-        in.read(reinterpret_cast<char *>(read_batch_slice_buffer.data()), read_batch_slice_buffer.size());
+//        in.read(reinterpret_cast<char *>(read_batch_slice_buffer.data()), read_batch_slice_buffer.size());
+        stream->read(reinterpret_cast<char *>(read_batch_slice_buffer.data()),read_batch_slice_buffer.size());
 
         for (uint64_t j = 0; j < batch_slice_line_read_num; j++)
         {
             uint64_t offset = (z_offset + i) * (modify_x + 2 * padding) * block_length +
                               (y_offset + j) * (modify_x + 2 * padding) + padding;
-            memcpy(read_buffer.data() + offset, read_batch_slice_buffer.data() + j * raw_x, raw_x);
+            offset *= voxel_size;
+            memcpy(read_buffer.data() + offset, read_batch_slice_buffer.data() + j * raw_x * voxel_size, raw_x * voxel_size);
         }
     }
 
@@ -406,9 +430,9 @@ inline void BlockVolumeReader::read_patch_blocks()
         {
             for (size_t y_i = 0; y_i < block_length; y_i++)
             {
-                uint64_t offset = z_i * batch_slice_size + y_i * batch_length + i * block_length_nopadding;
-                memcpy(block.data.data() + z_i * block_length * block_length + y_i * block_length,
-                       read_buffer.data() + offset, block_length);
+                uint64_t offset = z_i * batch_slice_size + y_i * batch_length * voxel_size + i * block_length_nopadding * voxel_size;
+                memcpy(block.data.data() + (z_i * block_length * block_length + y_i * block_length)*voxel_size,
+                       read_buffer.data() + offset, block_length * voxel_size);
             }
         }
 
@@ -448,4 +472,13 @@ inline bool BlockVolumeReader::is_block_warehouse_empty()
 std::array<uint32_t, 3> BlockVolumeReader::getDim() const
 {
     return this->dim;
+}
+void BlockVolumeReader::set_batch_read_turn_and_count(int turn, int count)
+{
+    this->batch_read_turn = turn;
+    this->batch_read_cnt = turn + count;
+}
+void BlockVolumeReader::set_raw_stream(std::unique_ptr<RawStream> stream)
+{
+    this->stream = std::move(stream);
 }

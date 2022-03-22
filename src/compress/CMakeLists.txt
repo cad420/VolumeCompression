@@ -5,6 +5,7 @@ list(
         VOXEL_COMPRESS_SRC
         voxel_compress.cpp
         nvenc/NvEncoder.cpp
+        ../Utils/TifHelper.cpp
         nvenc/CUDA/NvEncoderCuda.cpp
 )
 
@@ -26,3 +27,6 @@ message(STATUS ${NVDECODE_LIBS})
 target_link_libraries(voxel_compress ${NVENCODE_LIBS})
 
 add_subdirectory(nvenc)
+
+target_include_directories(voxel_compress PRIVATE ${LibTiff_INCLUDE_DIR})
+target_link_libraries(voxel_compress ${LibTiff_LIBS})

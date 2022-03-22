@@ -19,6 +19,10 @@ set(NVCODEC_INCLUDE_DIR ${NVCODEC_DIR}/include)
 set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
 
+set(LibTiff_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/libtiff/include)
+set(LibTiff_LIBS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib)
+
+
 include_directories(include third_party)
 
 add_subdirectory(src)
