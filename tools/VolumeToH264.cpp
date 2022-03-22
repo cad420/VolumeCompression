@@ -13,7 +13,9 @@ int main(int argc,char** argv){
         cmd.add<int>("log",'l'," log block length",true);
         cmd.add<int>("padding",'p',"padding of a block",false,1);
         cmd.add<std::string>("output",'o',"output h264 file path",true);
-
+        cmd.add<std::string>("voxel_type",'t',"voxel type",false,"uint8",
+                             cmdline::oneof<std::string>("uint8","int8","int16","uint16","float16",
+                                            "uint32","int32","float32"));
         cmd.parse_check(argc,argv);
 
         auto input = cmd.get<std::string>("input");
@@ -26,9 +28,34 @@ int main(int argc,char** argv){
         uint32_t block_length = std::pow(2,log);
         uint32_t frame_width = block_length;
         uint32_t frame_height = block_length;
-
+        uint32_t voxel_type = VOXEL_UNKNOWN;
+        auto vt = cmd.get<std::string>("voxel_type");
+        if(vt == "uint8"){
+            voxel_type = VOXEL_UINT8;
+        }
+        else if(vt == "int8"){
+            voxel_type = VOXEL_INT8;
+        }
+        else if(vt == "uint16"){
+            voxel_type = VOXEL_UINT16;
+        }
+        else if(vt == "int16"){
+            voxel_type = VOXEL_INT16;
+        }
+        else if(vt == "float16"){
+            voxel_type = VOXEL_FLOAT16;
+        }
+        else if(vt =="uint32"){
+            voxel_type = VOXEL_UINT32;
+        }
+        else if(vt == "int32"){
+            voxel_type = VOXEL_INT32;
+        }
+        else if(vt == "float32"){
+            voxel_type = VOXEL_FLOAT32;
+        }
         BlockVolumeReader reader(
-            {input,raw_x,raw_y,raw_z,block_length,padding}
+            {input,raw_x,raw_y,raw_z,sv::GetVoxelSize(voxel_type),block_length,padding}
             );
         auto dim = reader.getDim();
 
@@ -45,6 +72,7 @@ int main(int argc,char** argv){
         header.padding = padding;
         header.frame_width = frame_width;
         header.frame_height = frame_height;
+        header.voxel = voxel_type;
 
         VoxelCompressOptions opts;
         opts.width = frame_width;
@@ -58,6 +86,14 @@ int main(int argc,char** argv){
         while(!reader.isEmpty()){
             auto block = reader.getBlock();
             std::vector<std::vector<uint8_t >> packets;
+            {
+                std::string name = std::to_string(block.index[0])+"_"
+                                   +std::to_string(block.index[1])+"_"
+                                   +std::to_string(block.index[2])+".raw";
+                std::ofstream out(name,std::ios::binary);
+                out.write(reinterpret_cast<char*>(block.data.data()),block.data.size());
+                out.close();
+            }
             cmp.compress(block.data.data(),block.data.size(),packets);
             writer.write_packet(block.index,packets);
         }
