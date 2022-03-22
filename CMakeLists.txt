@@ -20,8 +20,12 @@ set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
 
 set(LibTiff_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/libtiff/include)
-set(LibTiff_LIBS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib)
-
+#set(LibTiff_LIBS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib)
+find_library(
+        LibTiff_LIBS
+        NAMES tif.lib tiffd.lib tiffxx.lib tiffxxd.lib
+        HINTS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib
+)
 
 include_directories(include third_party)
 
