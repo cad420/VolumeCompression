@@ -31,3 +31,17 @@ target_link_libraries(test_merge_tif PRIVATE TinyTIFF)
 add_executable(test_block_volume_cmp test_block_volume_cmp.cpp)
 target_include_directories(test_block_volume_cmp PUBLIC ${VolumeReader_INCLUDE_DIR})
 target_link_libraries(test_block_volume_cmp PRIVATE voxel_compress VolumeReader)
+
+add_executable(test_tif2h264 test_tif2h264.cpp)
+target_include_directories(test_tif2h264 PRIVATE )
+target_link_libraries(test_tif2h264 PRIVATE TinyTIFF)
+
+add_executable(test_libtiff test_libtiff.cpp)
+target_include_directories(test_libtiff PRIVATE ${LibTiff_INCLUDE_DIR})
+target_link_libraries(test_libtiff PRIVATE ${LibTiff_LIBS})
+
+add_executable(test_tif_same test_tif_same.cpp)
+target_link_libraries(test_tif_same PRIVATE voxel_compress)
+
+add_executable(test_extract_block_from_h264 test_extract_block_from_h264.cpp)
+target_link_libraries(test_extract_block_from_h264 PRIVATE voxel_uncompress)

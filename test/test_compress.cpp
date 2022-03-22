@@ -6,8 +6,8 @@
 #include <vector>
 #include <VoxelCompression/voxel_compress/VoxelCompress.h>
 using namespace std;
-#define volume_file_name_0 "aneurism_256_256_256_uint8.raw"
-#define volume_0_len 256*256*256
+#define volume_file_name_0 "D:/testoriginblock_12_15_5_uint8.raw"
+#define volume_0_len 512*512*512
 bool readVolumeData(uint8_t* &data, int64_t& len)
 {
     std::fstream in(volume_file_name_0,ios::in|ios::binary);
@@ -22,8 +22,8 @@ bool readVolumeData(uint8_t* &data, int64_t& len)
 int main(int argc,char** argv)
 {
     VoxelCompressOptions opts;
-    opts.height=256;
-    opts.width=256;
+    opts.height=512;
+    opts.width=512;
     opts.input_buffer_format=NV_ENC_BUFFER_FORMAT_NV12;
     VoxelCompress v_cmp(opts);
     uint8_t* data=nullptr;
@@ -38,6 +38,13 @@ int main(int argc,char** argv)
         packets_size+=packets[i].size();
     }
     std::cout<<"Packets size is: "<<packets_size<<std::endl;
+    std::string save_filename = "D:/testoriginblock_12_15_5_uint8.h264";
+    std::ofstream out(save_filename,std::ios::binary);
+    for(auto& p:packets){
+        out.write(reinterpret_cast<char*>(p.data()),p.size());
+    }
+    out.close();
+
     return 0;
 }
 
