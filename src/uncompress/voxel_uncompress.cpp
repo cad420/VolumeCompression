@@ -12,6 +12,10 @@ class VoxelUncompressImpl
     explicit VoxelUncompressImpl(const VoxelUncompressOptions &opts);
     ~VoxelUncompressImpl()
     {
+        decoder.reset();
+        if(self_ctx){
+            cuCtxDestroy(cu_ctx);
+        }
     }
     bool uncompress(uint8_t *dest_ptr, int64_t len, std::vector<std::vector<uint8_t>> &packets);
 
@@ -27,6 +31,7 @@ class VoxelUncompressImpl
 
     std::unique_ptr<NvDecoder> decoder;
     VoxelUncompressOptions opts;
+    bool self_ctx = false;
 };
 
 VoxelUncompressImpl::VoxelUncompressImpl(const VoxelUncompressOptions &opts) : opts(opts)
@@ -62,6 +67,7 @@ bool VoxelUncompressImpl::initCUDA()
     std::cout << "GPU in use: " << using_device_name << std::endl;
     this->cu_ctx = nullptr;
     checkCUDAErrors(cuCtxCreate(&cu_ctx, 0, cu_device));
+    this->self_ctx = true;
     return this->cu_ctx;
 }
 

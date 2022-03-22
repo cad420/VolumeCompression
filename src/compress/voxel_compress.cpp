@@ -16,6 +16,8 @@ class VoxelCompressImpl
     explicit VoxelCompressImpl(const VoxelCompressOptions &opts);
     ~VoxelCompressImpl()
     {
+        encoder.reset();
+        cuCtxDestroy(cu_ctx);
     }
     bool compress(uint8_t *src_ptr, int64_t len, std::vector<std::vector<uint8_t>> &packets);
 
@@ -27,7 +29,7 @@ class VoxelCompressImpl
     std::unique_ptr<NvEncoderCuda> encoder;
     VoxelCompressOptions compress_opts;
 
-    CUcontext cu_ctx;
+    CUcontext cu_ctx = nullptr;
 };
 
 VoxelCompressImpl::VoxelCompressImpl(const VoxelCompressOptions &opts) : compress_opts(opts)
