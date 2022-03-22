@@ -9,15 +9,60 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <json.hpp>
+#include <json.hpp>//todo not find in other program
 #include <map>
 #include <mutex>
 #include <vector>
+#include <unordered_set>
 
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
 #define VOXEL_COMPRESS_VERSION 1
+#define VOXEL_UNKNOWN 0
+#define VOXEL_UINT8 1
+#define VOXEL_INT8 2
+#define VOXEL_UINT16 3
+#define VOXEL_INT16 4
+#define VOXEL_FLOAT16 5
+#define VOXEL_UINT32 6
+#define VOXEL_INT32 7
+#define VOXEL_FLOAT32 8
+#define VOXEL_UINT64 9
+#define VOXEL_INT64 10
+#define VOXEL_FLOAT64 11
 namespace sv
 {
+inline size_t GetVoxelSize(uint32_t tp)
+{
+    size_t size = 0;
+    switch (tp)
+    {
+    case VOXEL_UNKNOWN:
+        break;
+    case VOXEL_UINT8:
+    case VOXEL_INT8:
+        size = 1;
+        break;
+    case VOXEL_UINT16:
+    case VOXEL_INT16:
+    case VOXEL_FLOAT16:
+        size = 2;
+        break;
+    case VOXEL_UINT32:
+    case VOXEL_INT32:
+    case VOXEL_FLOAT32:
+        size = 4;
+        break;
+    case VOXEL_UINT64:
+    case VOXEL_INT64:
+    case VOXEL_FLOAT64:
+        size = 8;
+        break;
+    default:
+        size = 0;
+    }
+
+    return size;
+}
 struct Header
 {
     uint64_t identifier;
@@ -32,7 +77,9 @@ struct Header
     uint32_t padding;
     uint32_t frame_width;
     uint32_t frame_height;
-    uint64_t codec_method;
+    //    uint64_t codec_method;
+    uint32_t codec_method;
+    uint32_t voxel = 1;
     friend std::ostream &operator<<(std::ostream &os, const Header &header)
     {
         os << "[Header Info]"
@@ -41,7 +88,7 @@ struct Header
            << "\n[block dim]: " << header.block_dim_x << " " << header.block_dim_y << " " << header.block_dim_z
            << "\n[log_block_length]: " << header.log_block_length << "\n[padding]: " << header.padding
            << "\n[frame_width]: " << header.frame_width << "\n[frame_height]: " << header.frame_height
-           << "\n[codec_method]: " << header.codec_method << std::endl;
+           << "\n[codec_method]: " << header.codec_method << "\n[voxel]: " << header.voxel << std::endl;
         return os;
     }
 };
@@ -61,8 +108,25 @@ struct Index
            << std::endl;
         return os;
     }
+    bool operator==(const Index& idx) const{
+        return index_x == idx.index_x && index_y == idx.index_y && index_z == idx.index_z;
+    }
 };
+}
+namespace std{
+    template<>
+    struct hash<sv::Index>{
+        size_t operator()(const sv::Index& idx) const{
+            size_t a = idx.index_x;
+            size_t b = idx.index_y;
+            size_t c = idx.index_z;
+            size_t t = a ^ (b + 0x9e3779b97f4a7c15 + (a << 6) + (a >> 2));
+            return t ^ (c + 0x9e3779b97f4a7c15 + (t << 6) + (t >> 2));
+        }
+    };
+}
 
+namespace sv{
 class Reader
 {
   public:
@@ -94,17 +158,16 @@ class Reader
         data_beg = index_beg + block_num * sizeof(sv::Index);
         reader_indexes(this->indexes);
     }
-    void reader_indexes(std::vector<sv::Index> &indexes)
+    void reader_indexes(std::unordered_set<Index> &indexes)
     {
-        if (indexes.size() != block_num)
-        {
-            indexes.resize(block_num);
-        }
+        indexes.clear();
         in.seekg(std::ios::beg + index_beg);
 
         for (size_t i = 0; i < block_num; i++)
         {
-            in.read(reinterpret_cast<char *>(&indexes[i]), sizeof(sv::Index));
+            Index index{};
+            in.read(reinterpret_cast<char *>(&index), sizeof(Index));
+            indexes.insert(index);
         }
     }
     void read_packet(const std::array<uint32_t, 3> &index, std::vector<std::vector<uint8_t>> &packet)
@@ -112,24 +175,25 @@ class Reader
         {
             std::unique_lock<std::mutex> lk(mtx);
             cv.wait(lk, []() { return true; });
-
-            for (auto &it : indexes)
+            auto it = indexes.find(Index{index[0],index[1],index[2]});
+            if(it != indexes.end())
             {
-                if (it.index_x == index[0] && it.index_y == index[1] && it.index_z == index[2])
+
+                in.seekg(std::ios::beg + data_beg + it->offset);
+                uint64_t offset = 0, frame_size = 0;
+                while (offset < it->size)
                 {
-                    in.seekg(std::ios::beg + data_beg + it.offset);
-                    uint64_t offset = 0, frame_size = 0;
-                    while (offset < it.size)
-                    {
-                        in.read(reinterpret_cast<char *>(&frame_size), sizeof(uint64_t));
-                        std::vector<uint8_t> tmp;
-                        tmp.resize(frame_size);
-                        in.read(reinterpret_cast<char *>(tmp.data()), frame_size);
-                        packet.push_back(tmp);
-                        offset += sizeof(uint64_t) + frame_size;
-                    }
-                    break;
+                    in.read(reinterpret_cast<char *>(&frame_size), sizeof(uint64_t));
+                    std::vector<uint8_t> tmp;
+                    tmp.resize(frame_size);
+                    in.read(reinterpret_cast<char *>(tmp.data()), frame_size);
+                    packet.push_back(tmp);
+                    offset += sizeof(uint64_t) + frame_size;
                 }
+
+            }
+            else{
+                std::cerr<<"not find block for index: "<<index[0]<<" "<<index[1]<<" "<<index[2]<<std::endl;
             }
         }
         cv.notify_one();
@@ -142,7 +206,8 @@ class Reader
 
   private:
     sv::Header header;
-    std::vector<sv::Index> indexes;
+//    std::vector<sv::Index> indexes;
+    std::unordered_set<sv::Index> indexes;
     uint32_t block_num;
     uint64_t index_beg;
     uint64_t data_beg;
