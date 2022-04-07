@@ -20,24 +20,36 @@ set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
 
 set(LibTiff_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/libtiff/include)
-#set(LibTiff_LIBS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib)
+if(WIN32)
 set(
         LibTiff_LIBS
-        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib
-        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiffxx.lib
+
+        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/x64/tiff.lib
+
+        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/x64/tiffxx.lib
 )
+else()
+
+endif()
 message(STATUS ${LibTiff_LIBS})
-set(FFmpeg_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/ffmpeg-master-latest-win64-gpl-shared/include)
+set(FFmpeg_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/include)
+if(WIN32)
 set(
         FFmpeg_LIBS
-#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avdevice.lib
-#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avformat.lib
-#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avfilter.lib
-        ${PROJECT_SOURCE_DIR}/third_party/ffmpeg-master-latest-win64-gpl-shared/lib/avcodec.lib
-        ${PROJECT_SOURCE_DIR}/third_party/ffmpeg-master-latest-win64-gpl-shared/lib/avutil.lib
-#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avcodec.lib
-#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avutil.lib
+        ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/x64/avcodec.lib
+
+        ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/x64/avutil.lib
+
 )
+else()
+    set(
+            FFmpeg_LIBS
+            ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/linux/libavcodec.so
+
+            ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/linux/libavutil.so
+
+    )
+endif()
 message(!!!!!!!!)
 message(STATUS ${FFmpeg_LIBS})
 
