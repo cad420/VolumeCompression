@@ -3,6 +3,133 @@
 #include<VoxelCompression/voxel_compress/VoxelCompress.h>
 #include <cmdline.hpp>
 
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavutil/opt.h>
+#include <libavutil/imgutils.h>
+}
+
+struct Encoder{
+    int encode_w = 0;
+    int encode_h = 0;
+    int bits_per_sample = 0;
+    sv::CodecMethod codec_method = sv::UNDEFINED;
+    size_t get_frame_size(){
+        return encode_w * encode_h * bits_per_sample / 8;
+    }
+    size_t compress(uint8_t* src,size_t size,std::vector<std::vector<uint8_t>>& packets){
+        try{
+            if(!encode_w || !encode_h || !bits_per_sample || codec_method == sv::UNDEFINED){
+                throw std::runtime_error("invalid compress params");
+            }
+
+            const auto codec = avcodec_find_encoder(AV_CODEC_ID_HEVC);
+            if(!codec){
+                throw std::runtime_error("not find codec");
+            }
+            AVCodecContext* c = avcodec_alloc_context3(codec);
+            if(!c){
+                throw std::runtime_error("alloc video codec context failed");
+            }
+            AVPacket* pkt = av_packet_alloc();
+            if(!pkt){
+                throw std::runtime_error("alloc packet failed");
+            }
+//    c->bit_rate = 400000;
+            c->width = encode_w;
+            c->height = encode_h;
+            c->time_base = {1,30};
+            c->framerate = {30,1};
+//    c->gop_size = 11;
+            c->max_b_frames = 1;
+            c->bits_per_raw_sample = bits_per_sample;
+//    c->level = 3;
+//    c->thread_count = 10;
+            if(codec_method == sv::H264_YUV420 || codec_method == sv::HEVC_YUV420)
+                c->pix_fmt = AV_PIX_FMT_YUV420P;
+            else if(codec_method == sv::HEVC_YUV420_12BIT)
+                c->pix_fmt = AV_PIX_FMT_YUV420P12;//
+            else
+                throw std::runtime_error("invalid codec method or buffer format");
+
+            av_opt_set(c->priv_data,"preset","medium",0);
+            av_opt_set(c->priv_data,"tune","fastdecode",0);
+
+            int ret = avcodec_open2(c,codec,nullptr);
+            if(ret<0){
+                throw std::runtime_error("open codec failed");
+            }
+
+            AVFrame* frame = av_frame_alloc();
+            if(!frame){
+                throw std::runtime_error("frame alloc failed");
+            }
+            frame->format = c->pix_fmt;
+            frame->width = c->width;
+            frame->height = c->height;
+            ret = av_frame_get_buffer(frame,0);
+            if(ret<0){
+                throw std::runtime_error("could not alloc frame data");
+            }
+
+            int frame_size = get_frame_size();
+            int frame_count = size / frame_size;
+            size_t packets_size = 0;
+            for(int i = 0;i<frame_count;i++){
+                ret = av_frame_make_writable(frame);
+
+                if(ret<0){
+                    std::cerr<<"can't make frame write"<<std::endl;
+                    exit(1);
+                }
+
+                memcpy(frame->data[0],src + i * frame_size,frame_size);
+
+                frame->pts = i;
+
+                encode(c,frame,pkt,packets,packets_size);
+            }
+            encode(c,nullptr,pkt,packets,packets_size);
+
+            std::cout<<"packets count: "<<packets.size()<<" , size: "<<packets_size<<std::endl;
+            avcodec_free_context(&c);
+            av_frame_free(&frame);
+            av_packet_free(&pkt);
+            return packets_size;
+        }
+        catch (const std::exception& err)
+        {
+            std::cerr<<err.what()<<std::endl;
+            packets.clear();
+            return 0;
+        }
+    }
+    void encode(AVCodecContext* c,AVFrame* frame,AVPacket* pkt,std::vector<std::vector<uint8_t>>& packets,size_t& packets_size){
+        int ret = avcodec_send_frame(c,frame);
+
+        if(ret < 0){
+            throw std::runtime_error("error sending a frame for encoding");
+        }
+
+        while(ret >= 0){
+            ret = avcodec_receive_packet(c,pkt);
+            if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF){
+                break;
+            }
+            else if(ret < 0){
+                throw std::runtime_error("error encoding");
+            }
+            packets_size += pkt->size;
+            std::vector<uint8_t> tmp(pkt->size);
+            memcpy(tmp.data(),pkt->data,pkt->size);
+            packets.push_back(std::move(tmp));
+            av_packet_unref(pkt);
+        }
+    }
+};
+
+
 int main(int argc,char** argv){
     try{
         cmdline::parser cmd;
@@ -76,10 +203,16 @@ int main(int argc,char** argv){
         header.frame_height = frame_height;
         header.voxel = voxel_type;
 
-        VoxelCompressOptions opts;
-        opts.width = frame_width;
-        opts.height = frame_height;
-        VoxelCompress cmp(opts);
+        Encoder encoder{};
+        encoder.encode_w = frame_width;
+        encoder.encode_h = frame_height;
+        encoder.bits_per_sample = sv::GetVoxelSize(voxel_type) * 8;
+        if(encoder.bits_per_sample == 8){
+            encoder.codec_method = sv::HEVC_YUV420;
+        }
+        else if(encoder.bits_per_sample == 16){
+            encoder.codec_method = sv::HEVC_YUV420_12BIT;
+        }
 
         sv::Writer writer(output.c_str());
         writer.write_header(header);
@@ -88,15 +221,7 @@ int main(int argc,char** argv){
         while(!reader.isEmpty()){
             auto block = reader.getBlock();
             std::vector<std::vector<uint8_t >> packets;
-//            {
-//                std::string name = std::to_string(block.index[0])+"_"
-//                                   +std::to_string(block.index[1])+"_"
-//                                   +std::to_string(block.index[2])+".raw";
-//                std::ofstream out(name,std::ios::binary);
-//                out.write(reinterpret_cast<char*>(block.data.data()),block.data.size());
-//                out.close();
-//            }
-            cmp.compress(block.data.data(),block.data.size(),packets);
+            encoder.compress(block.data.data(),block.data.size(),packets);
             writer.write_packet(block.index,packets);
         }
     }

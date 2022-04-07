@@ -14,9 +14,11 @@
 #include <mutex>
 #include <vector>
 #include <unordered_set>
-
+#define VOXEL_COMPRESS_VERSION_NV 1
+#define VOXEL_COMPRESS_VERSION_NV_VOXEL 2
+#define VOXEL_COMPRESS_VERSION_FFMPEG 3
 #define VOXEL_COMPRESS_FILE_IDENTIFIER 0x123456
-#define VOXEL_COMPRESS_VERSION 1
+#define VOXEL_COMPRESS_VERSION VOXEL_COMPRESS_VERSION_NV_VOXEL
 #define VOXEL_UNKNOWN 0
 #define VOXEL_UINT8 1
 #define VOXEL_INT8 2
@@ -63,6 +65,14 @@ inline size_t GetVoxelSize(uint32_t tp)
 
     return size;
 }
+
+enum CodecMethod:uint32_t{
+    UNDEFINED = 0,
+    H264_YUV420 = 1,
+    HEVC_YUV420 = 2,
+    HEVC_YUV420_12BIT = 3
+};
+
 struct Header
 {
     uint64_t identifier;

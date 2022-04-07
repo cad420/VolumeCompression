@@ -76,8 +76,8 @@ bool VoxelUncompressImpl::initDecoder()
     //    std::cout<<"create decoder"<<std::endl;
     cuCtxSetCurrent(cu_ctx);
     decoder = std::make_unique<NvDecoder>(cu_ctx, opts.use_device_frame_buffer, opts.codec_method);
-    width = opts.width;
-    height = opts.height;
+//    width = decoder->GetWidth();
+//    height = decoder->GetHeight();
     output_format = opts.output_buffer_format;
     return decoder.get();
 }
@@ -88,25 +88,25 @@ bool VoxelUncompressImpl::uncompress(uint8_t *dest_ptr, int64_t len, std::vector
         return false;
     cuCtxSetCurrent(cu_ctx);
 
-//    int total_decode_frame_num=0;
     int64_t offset = 0;
+
     for (size_t i = 0; i < packets.size() + 1; i++)
     {
         uint8_t *packet = i < packets.size() ? packets[i].data() : nullptr;
         size_t len = i < packets.size() ? packets[i].size() : 0;
 
         int frame_decode_num = decoder->Decode(packet, len);
-//        total_decode_frame_num+=frame_decode_num;
 
         for (size_t j = 0; j < frame_decode_num; j++)
         {
             auto frame_ptr = decoder->GetFrame(); // device ptr
             auto decode_frame_bytes = decoder->GetFrameSize();
+            decode_frame_bytes = decode_frame_bytes * 2 / 3 ;//for new encode method
             auto res = cuMemcpy((CUdeviceptr)(dest_ptr + offset), (CUdeviceptr)frame_ptr, decode_frame_bytes);
             offset += decode_frame_bytes;
-            if (res != CUDA_SUCCESS)
+            if (res != CUDA_SUCCESS || offset >= len)
             {
-                throw std::runtime_error("uncompress: cuMemcpy error");
+                throw std::runtime_error("uncompress: decode error");
             }
         }
     }

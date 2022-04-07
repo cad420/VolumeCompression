@@ -12,7 +12,7 @@
 struct VoxelUncompressOptions
 {
     [[deprecated]] uint32_t width = 0, height = 0;                                        // no-useful
-    [[deprecated]] NV_ENC_BUFFER_FORMAT output_buffer_format = NV_ENC_BUFFER_FORMAT_NV12; // not necessary
+    NV_ENC_BUFFER_FORMAT output_buffer_format = NV_ENC_BUFFER_FORMAT_NV12; // not necessary
     bool use_device_frame_buffer = true; // if first decoded data are store in device
     cudaVideoCodec codec_method = cudaVideoCodec_H264;//default codec method is h264
     CUcontext cu_ctx = nullptr;

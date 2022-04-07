@@ -21,11 +21,26 @@ set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
 
 set(LibTiff_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/libtiff/include)
 #set(LibTiff_LIBS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib)
-find_library(
+set(
         LibTiff_LIBS
-        NAMES tif.lib tiffd.lib tiffxx.lib tiffxxd.lib
-        HINTS ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib
+        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiff.lib
+        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/tiffxx.lib
 )
+message(STATUS ${LibTiff_LIBS})
+set(FFmpeg_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/ffmpeg-master-latest-win64-gpl-shared/include)
+set(
+        FFmpeg_LIBS
+#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avdevice.lib
+#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avformat.lib
+#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avfilter.lib
+        ${PROJECT_SOURCE_DIR}/third_party/ffmpeg-master-latest-win64-gpl-shared/lib/avcodec.lib
+        ${PROJECT_SOURCE_DIR}/third_party/ffmpeg-master-latest-win64-gpl-shared/lib/avutil.lib
+#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avcodec.lib
+#        ${PROJECT_SOURCE_DIR}/third_party/FFmpeg/bin/avutil.lib
+)
+message(!!!!!!!!)
+message(STATUS ${FFmpeg_LIBS})
+
 
 include_directories(include third_party)
 

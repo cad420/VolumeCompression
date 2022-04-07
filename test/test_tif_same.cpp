@@ -6,7 +6,9 @@
 #include <iostream>
 #include <vector>
 int main(){
-    std::string tif_name1 = "D:/test_1270_merge_max.tif";
+
+
+    std::string tif_name1 = "D:/202790_06461_CH1.tif";
     std::string tif_name2 = "D:/volume_tif_to_h264_test/test_01270_lod1.tif";
     TIFInStream tif1;
     TIFInStream tif2;

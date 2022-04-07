@@ -45,3 +45,24 @@ target_link_libraries(test_tif_same PRIVATE voxel_compress)
 
 add_executable(test_extract_block_from_h264 test_extract_block_from_h264.cpp)
 target_link_libraries(test_extract_block_from_h264 PRIVATE voxel_uncompress)
+
+add_executable(test_volume_value test_volume_value.cpp)
+target_link_libraries(test_volume_value
+        PRIVATE
+        voxel_compress
+        voxel_uncompress)
+
+
+add_executable(test_ffmpeg test_ffmpeg.cpp)
+target_link_libraries(
+        test_ffmpeg
+        PRIVATE
+        ${FFmpeg_LIBS}
+        voxel_uncompress
+        voxel_compress
+)
+target_include_directories(
+        test_ffmpeg
+        PRIVATE
+        ${FFmpeg_INCLUDE_DIR}
+)

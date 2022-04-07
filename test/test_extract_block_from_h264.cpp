@@ -5,14 +5,14 @@
 #include <VoxelCompression/voxel_uncompress/VoxelUncompress.h>
 
 int main(){
-    std::string h264_file_name = "D:/volumetifto264test_z_2540-3048_9p2_max_lod0_23389_29581_10296.h264";
+//    std::string h264_file_name = "D:/volumetifto264test_z_2540-3048_9p2_max_lod0_23389_29581_10296.h264";
 //    std::string h264_file_name = "E:/MouseNeuronData/mouse_23389_29581_10296_9p2_lod0.h264";
-
+    std::string h264_file_name = "D:/backpack/testencode256_backpack_7p1.h264";
     sv::Reader reader(h264_file_name.c_str());
     reader.read_header();
-    std::array<uint32_t,3> block_index = {12,15,5};
+    std::array<uint32_t,3> block_index = {0,0,0};
     int block_length = 512;
-    int ele_size = 1;
+    int ele_size = 2;
     int block_size_bytes = block_length * block_length * block_length * ele_size;
     std::vector<std::vector<uint8_t>> packets;
     reader.read_packet(block_index,packets);
@@ -31,12 +31,12 @@ int main(){
     VoxelUncompress decoder(opts);
 
 
-
     std::vector<uint8_t> buffer(block_size_bytes,0);
     decoder.uncompress(buffer.data(),block_size_bytes,packets);
 
 //    std::string out_file_name = "D:/mouselod0test_0_0_5_uint8.raw";
-    std::string out_file_name = "D:/nvolumeblockfromtifh264test_12_15_5_uint8.raw";
+//    std::string out_file_name = "D:/nvolumeblockfromtifh264test_12_15_5_uint8.raw";
+    std::string out_file_name = "D:/backpack/testblock9p2_0_0_0_uint16.raw";
     std::ofstream out(out_file_name,std::ios::binary);
     assert(out.is_open());
     out.write(reinterpret_cast<char*>(buffer.data()),buffer.size());
