@@ -12,6 +12,8 @@
 #include <queue>
 #include <string>
 #include <vector>
+#include <thread>
+#include <cstring>
 #include "RawStream.hpp"
 #define DEFAULT_VALUE 0
 

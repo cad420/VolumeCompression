@@ -16,5 +16,6 @@ find_package(OpenMP)
 add_executable(VolumeTifToH264 VolumeTifToH264.cpp)
 target_link_libraries(VolumeTifToH264 PRIVATE OpenMP::OpenMP_CXX ${FFmpeg_LIBS} voxel_compress)
 target_include_directories(VolumeTifToH264 PRIVATE ${FFmpeg_INCLUDE_DIR})
+target_compile_features(VolumeTifToH264 PRIVATE cxx_std_17)
 
 add_executable(ExtractBlockFromRawVolume ExtractBlockFromRawVolume.cpp)

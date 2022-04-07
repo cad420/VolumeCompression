@@ -21,6 +21,8 @@
 #include<vector>
 #include <iomanip>
 #include <sstream>
+#include <cmath>
+#include <algorithm>
 #include<VoxelCompression/utils/util.h>
 
 class Worker {

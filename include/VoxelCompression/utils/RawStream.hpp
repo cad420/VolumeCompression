@@ -57,7 +57,7 @@ class RawStream{
 
     //for raw
     void open(const std::string& name){
-        in.open(name,std::ios::binary|std::ios::beg);
+        in.open(name,std::ios::binary);
         if(!in.is_open()){
             throw std::runtime_error("open raw file failed");
         }

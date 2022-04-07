@@ -31,7 +31,7 @@ int main(int argc,char** argv)
     auto raw_x=cmd.get<int>("raw_x");
     auto raw_y=cmd.get<int>("raw_y");
     auto raw_z=cmd.get<int>("raw_z");
-    auto mem_limit=min(cmd.get<int>("memory_limit"),system_memory_gb*3/4);
+    auto mem_limit=std::min(cmd.get<int>("memory_limit"),system_memory_gb*3/4);
     auto method=cmd.get<std::string>("method");
     auto resample_method = method=="max"?VolumeResampler::ResampleMethod::MAX:VolumeResampler::ResampleMethod::AVG;
     try {

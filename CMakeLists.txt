@@ -13,7 +13,9 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CUDA_STANDARD 14)
 
-set(PROJECT_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+set(PROJECT_THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/third_party)
 set(NVCODEC_DIR ${PROJECT_THIRD_PARTY_DIR}/nvcodec)
 set(NVCODEC_INCLUDE_DIR ${NVCODEC_DIR}/include)
 set(NVCODEC_LIB_DIR ${NVCODEC_DIR}/lib)
@@ -29,7 +31,18 @@ set(
         ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/x64/tiffxx.lib
 )
 else()
+set(
+        LibTiff_LIBS
 
+        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/linux/libtiff.so
+
+        ${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/linux/libtiff.so
+)
+file(
+    COPY
+    "${PROJECT_SOURCE_DIR}/third_party/libtiff/lib/linux/"
+    DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+)
 endif()
 message(STATUS ${LibTiff_LIBS})
 set(FFmpeg_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/include)
@@ -48,6 +61,13 @@ else()
 
             ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/linux/libavutil.so
 
+            ${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/linux/libswresample.so
+
+    )
+    file(
+    COPY
+    "${PROJECT_SOURCE_DIR}/third_party/ffmpeg/lib/linux/"
+    DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()
 message(!!!!!!!!)

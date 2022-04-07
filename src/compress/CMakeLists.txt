@@ -19,10 +19,13 @@ target_include_directories(voxel_compress PUBLIC
 if(WIN32)
     set(NVENCODE_LIBS ${NVCODEC_LIB_DIR}/x64/nvencodeapi.lib)
 else()
+message(!!!!!!!!!!!LINUX)
     set(NVENCODE_LIBS
-            ${NVCODEC_LIB_DIR}/linux/stubs/x86_64/libnvcuvid-encode.so)
+            ${PROJECT_SOURCE_DIR}/third_party/nvcodec/lib/linux/stubs/x86_64/libnvidia-encode.so)
 endif()
-message(STATUS ${NVDECODE_LIBS})
+message(!!!!!!!!!!!)
+message(STATUS ${NVCODEC_LIB_DIR})
+message(STATUS ${NVENCODE_LIBS})
 
 target_link_libraries(voxel_compress ${NVENCODE_LIBS})
 
